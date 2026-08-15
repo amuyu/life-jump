@@ -33,6 +33,9 @@ export const FALL_LINE_OFFSET = -16       // camera.y + 이 값보다 낮으면 
 export const REVIVE_MIN_MARGIN = 40       // 부활 후보는 camera.y + 40 이상
 export const RESCUE_MARGIN = 60           // 구조 발판은 camera.y + 60
 export const INVULN_SECONDS = 1.5
+// 시작 카메라를 시작 높이(baseY)보다 이만큼 아래에 두어, 화면 하단에 땅이
+// 보이도록 여유를 둔다 (createGameState가 사용).
+export const GROUND_VIEW_MARGIN = 40
 
 // 구간 경계 (10px = 1m 이므로 300m / 900m)
 // 발판 종류 결정(Task 10)과 배경 보간(Task 12)이 함께 쓰므로 여기 둔다.

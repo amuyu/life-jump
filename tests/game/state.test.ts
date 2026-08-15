@@ -24,10 +24,10 @@ describe('createGameState', () => {
     expect(s.player.prevY).toBe(s.player.y)
   })
 
-  it('점수와 카메라가 0에서 시작한다', () => {
+  it('점수는 0에서 시작하고, 카메라는 시작 높이보다 GROUND_VIEW_MARGIN만큼 아래에서 시작한다', () => {
     const s = createGameState(defaultModifiers())
     expect(s.run.maxHeight).toBe(0)
-    expect(s.camera.y).toBe(0)
+    expect(s.camera.y).toBe(0 - C.GROUND_VIEW_MARGIN)
   })
 
   it('로켓 부츠(startHeight)를 주면 플레이어·카메라·점수가 함께 올라간다', () => {

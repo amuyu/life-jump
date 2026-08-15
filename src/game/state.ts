@@ -119,8 +119,10 @@ export function createGameState(mods: RunModifiers): GameState {
     doubleJumpUsed: false,
   }
 
-  // 시작 시 플레이어가 화면 아래쪽 1/4 지점에 오도록 카메라를 잡는다
-  const cameraY = Math.max(0, baseY - C.LOGICAL_H * 0.25)
+  // 시작 카메라를 시작 높이보다 GROUND_VIEW_MARGIN만큼 아래에 두어, 화면
+  // 하단에 땅이 보이도록 한다 (0으로 클램프하면 시작 발판이 화면 밖으로
+  // 밀려나 캐릭터가 허공에 뜬 것처럼 보인다 — Task 16 수정 라운드 1).
+  const cameraY = baseY - C.GROUND_VIEW_MARGIN
 
   return {
     player,
