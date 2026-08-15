@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { defaultSave, writeSave, loadSave, SAVE_KEY, type ValidIds } from '../../src/core/storage'
-import { modifiersFrom, consumeSelected, CONSUMABLE_IDS } from '../../src/data/shop'
+import { defaultSave, writeSave, loadSave, type ValidIds } from '../../src/core/storage'
+import { CONSUMABLE_IDS } from '../../src/data/shop'
 import { OUTFIT_IDS } from '../../src/data/outfits'
-import { createGameState } from '../../src/game/state'
+import { createGameState, type RunState } from '../../src/game/state'
+import { startRun, finishRun } from '../../src/runFlow'
 import * as C from '../../src/constants'
 
 const VALID: ValidIds = { outfits: OUTFIT_IDS, consumables: CONSUMABLE_IDS }
@@ -19,12 +20,15 @@ function mockStorage(): void {
 
 beforeEach(() => { mockStorage() })
 
-/** main.ts의 startRun()과 같은 절차 */
-function startRun(save: ReturnType<typeof defaultSave>) {
-  const applied = consumeSelected(save)        // 1. 차감하고 적용분을 받는다
-  const mods = modifiersFrom(save, applied)    // 2. 적용분만 효과에 반영
-  writeSave(save)                              // 3. 함께 저장
-  return createGameState(mods)                 // 4. 상태 생성
+/**
+ * main.ts의 startRun()과 같은 절차를 재현한다 — 다만 실제 판 시작 로직
+ * (consumeSelected → modifiersFrom)은 src/runFlow.ts의 startRun을 그대로
+ * 호출한다. 이 파일 안에서 재선언하지 않는다.
+ */
+function runStart(save: ReturnType<typeof defaultSave>) {
+  const { mods } = startRun(save)               // 1~2. 차감 + 적용분만 반영 (실제 코드)
+  writeSave(save)                                // 3. 함께 저장
+  return createGameState(mods)                   // 4. 상태 생성
 }
 
 describe('판 시작 절차', () => {
@@ -33,7 +37,7 @@ describe('판 시작 절차', () => {
     save.consumables.cushion = 2
     save.selectedConsumables = ['cushion']
 
-    const state = startRun(save)
+    const state = runStart(save)
 
     expect(state.run.cushionAvailable).toBe(true)
     expect(save.consumables.cushion).toBe(1)
@@ -45,7 +49,7 @@ describe('판 시작 절차', () => {
     save.consumables.rocket = 0
     save.selectedConsumables = ['feather', 'rocket']   // 손상된 저장
 
-    const state = startRun(save)
+    const state = runStart(save)
 
     expect(state.run.gravity).toBe(C.GRAVITY)          // 깃털 효과 없음
     expect(state.run.maxHeight).toBe(0)                // 로켓 부츠 효과 없음
@@ -57,7 +61,7 @@ describe('판 시작 절차', () => {
     save.consumables.rocket = 0
     save.selectedConsumables = ['feather', 'rocket']
 
-    const state = startRun(save)
+    const state = runStart(save)
 
     expect(state.run.gravity).toBe(900)                // 깃털은 적용
     expect(state.run.maxHeight).toBe(0)                // 로켓 부츠는 미적용
@@ -68,7 +72,7 @@ describe('판 시작 절차', () => {
     save.consumables.rocket = 1
     save.selectedConsumables = ['rocket']
 
-    startRun(save)
+    runStart(save)
     const reloaded = loadSave(VALID)
 
     expect(reloaded.consumables.rocket).toBe(0)
@@ -80,7 +84,7 @@ describe('판 시작 절차', () => {
     save.consumables.rocket = 1
     save.selectedConsumables = ['rocket']
 
-    const state = startRun(save)
+    const state = runStart(save)
 
     expect(state.run.maxHeight).toBe(100 * C.PX_PER_M)
   })
@@ -90,7 +94,7 @@ describe('판 시작 절차', () => {
     save.upgrades.jump = 3
     save.upgrades.energy = 2
 
-    const state = startRun(save)
+    const state = runStart(save)
 
     expect(state.run.jumpVelocity).toBe(540)
     expect(state.run.maxEnergy).toBe(5)
@@ -102,19 +106,39 @@ describe('판 시작 절차', () => {
     save.consumables.feather = 0
     save.selectedConsumables = ['feather']
 
-    startRun(save)
+    runStart(save)
 
     expect(save.consumables.feather).toBe(0)
     expect(save.selectedConsumables).toEqual([])
   })
 })
 
-/** main.ts의 finishRun()과 같은 결산 */
-function finishRun(save: ReturnType<typeof defaultSave>, run: { maxHeight: number; thread: number; coins: number }) {
-  save.thread += run.thread
-  save.coins += run.coins
-  save.totalRuns += 1
-  if (run.maxHeight > save.bestHeight) save.bestHeight = run.maxHeight
+/** 결산에 필요한 필드만 채운 완전한 RunState를 만든다 (형변환 없이) */
+function makeRun(fields: { maxHeight: number; thread: number; coins: number }): RunState {
+  return {
+    time: 0,
+    maxHeight: fields.maxHeight,
+    energy: 3,
+    maxEnergy: 3,
+    invulnerableUntil: 0,
+    cushionAvailable: false,
+    doubleJumpEnabled: false,
+    gravity: C.GRAVITY,
+    jumpVelocity: C.JUMP_V,
+    moveSpeed: C.MOVE_SPEED,
+    magnetRadius: 0,
+    thread: fields.thread,
+    coins: fields.coins,
+    over: true,
+  }
+}
+
+/**
+ * main.ts의 finishRun()과 같은 결산을 재현한다 — 실제 결산 로직은
+ * src/runFlow.ts의 finishRun을 그대로 호출한다.
+ */
+function runFinish(save: ReturnType<typeof defaultSave>, fields: { maxHeight: number; thread: number; coins: number }) {
+  finishRun(save, makeRun(fields))
   writeSave(save)
 }
 
@@ -124,7 +148,7 @@ describe('판 종료 결산', () => {
     save.thread = 10
     save.coins = 20
 
-    finishRun(save, { maxHeight: 500, thread: 7, coins: 13 })
+    runFinish(save, { maxHeight: 500, thread: 7, coins: 13 })
 
     expect(save.thread).toBe(17)
     expect(save.coins).toBe(33)
@@ -132,20 +156,20 @@ describe('판 종료 결산', () => {
 
   it('최고기록을 갱신한다', () => {
     const save = defaultSave()
-    finishRun(save, { maxHeight: 5000, thread: 0, coins: 0 })
+    runFinish(save, { maxHeight: 5000, thread: 0, coins: 0 })
     expect(save.bestHeight).toBe(5000)
   })
 
   it('기록이 낮으면 갱신하지 않는다', () => {
     const save = defaultSave()
     save.bestHeight = 9000
-    finishRun(save, { maxHeight: 3000, thread: 0, coins: 0 })
+    runFinish(save, { maxHeight: 3000, thread: 0, coins: 0 })
     expect(save.bestHeight).toBe(9000)
   })
 
   it('결산 결과가 저장에 남는다', () => {
     const save = defaultSave()
-    finishRun(save, { maxHeight: 4200, thread: 5, coins: 9 })
+    runFinish(save, { maxHeight: 4200, thread: 5, coins: 9 })
 
     const reloaded = loadSave(VALID)
     expect(reloaded.bestHeight).toBe(4200)
@@ -157,7 +181,7 @@ describe('판 종료 결산', () => {
   it('여러 판을 이어 해도 재화가 계속 쌓인다', () => {
     let save = defaultSave()
     for (let i = 0; i < 5; i++) {
-      finishRun(save, { maxHeight: 1000 * i, thread: 4, coins: 6 })
+      runFinish(save, { maxHeight: 1000 * i, thread: 4, coins: 6 })
       save = loadSave(VALID)
     }
     expect(save.thread).toBe(20)

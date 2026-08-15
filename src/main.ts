@@ -8,9 +8,10 @@ import { createRng } from './core/rng'
 import { loadSave, writeSave, type SaveData } from './core/storage'
 import { createGameState, type GameState } from './game/state'
 import { stepGame } from './game/update'
-import { modifiersFrom, consumeSelected, CONSUMABLE_IDS, UPGRADES, CONSUMABLES, nextUpgradePrice } from './data/shop'
+import { CONSUMABLE_IDS, UPGRADES, CONSUMABLES, nextUpgradePrice } from './data/shop'
 import { OUTFIT_IDS, outfitById, canCraft } from './data/outfits'
 import { pickQuestion, rewardFor } from './game/quiz'
+import { startRun as computeStartRun, finishRun as computeFinishRun } from './runFlow'
 import { renderLobby } from './ui/lobby'
 import { renderShop } from './ui/shop'
 import { renderWardrobe } from './ui/wardrobe'
@@ -128,8 +129,7 @@ function showLoadout(): void {
 
 function startRun(): void {
   // 적용분을 먼저 확정한다 — 재고 없는 항목은 효과를 받을 수 없다
-  const applied = consumeSelected(save)
-  const mods = modifiersFrom(save, applied)
+  const { mods } = computeStartRun(save)
   persist()
 
   state = createGameState(mods)
@@ -145,12 +145,7 @@ function startRun(): void {
 }
 
 function finishRun(run: GameState['run']): void {
-  save.thread += run.thread
-  save.coins += run.coins
-  save.totalRuns += 1
-
-  const isNewBest = run.maxHeight > save.bestHeight
-  if (isNewBest) save.bestHeight = run.maxHeight
+  const { isNewBest } = computeFinishRun(save, run)
   persist()
 
   gameLayer.classList.add('hidden')
