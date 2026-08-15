@@ -29,6 +29,24 @@ describe('resolveLanding', () => {
     expect(s.player.onGround).toBe(true)
   })
 
+  it('착지 시 prevY를 발판 y로 갱신하고 doubleJumpUsed를 리셋한다', () => {
+    // prevY 리셋이 빠지면 이 값(104)이 착지 후에도 그대로 남는다 —
+    // 다음 스윕 검사가 stale prevY를 보고 잘못 판정하는, 바로 이 태스크가
+    // 경고하는 "간헐적으로만 드러나는" 버그다.
+    const s = scene(100, 0, 60)
+    s.player.x = 10
+    s.player.prevY = 104
+    s.player.y = 96
+    s.player.vy = -200
+    s.player.doubleJumpUsed = true
+
+    const hit = resolveLanding(s)
+
+    expect(hit).not.toBeNull()
+    expect(s.player.prevY).toBe(100)
+    expect(s.player.doubleJumpUsed).toBe(false)
+  })
+
   it('상승 중에는 발판을 통과한다', () => {
     const s = scene(100, 0, 60)
     s.player.x = 10
