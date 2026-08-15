@@ -1,4 +1,5 @@
 import type { PlatformKind, ItemKind } from '../game/state'
+import type { UpgradeId, ConsumableId } from './shop'
 
 export type PixelMap = readonly string[]
 export type Palette = Readonly<Record<string, string>>
@@ -145,4 +146,111 @@ export const ITEM_PALETTES: Readonly<Record<ItemKind, Palette>> = {
   coin: { c: '#f9ca24', h: '#f0932b' },
   food: { r: '#eb4d4b', s: '#6ab04c' },
   quiz: { q: '#a29bfe' },
+}
+
+
+// 상점 아이콘 — 업그레이드 4종 + 소모품 4종, 전부 아이템과 같은 8×8 규약을 따른다.
+// IconKind는 data/shop.ts의 UpgradeId/ConsumableId와 동일한 문자열이므로 그대로 재사용한다.
+export type IconKind = UpgradeId | ConsumableId
+
+export const ICON_MAPS: Readonly<Record<IconKind, PixelMap>> = {
+  // 점프력 강화 — 위쪽을 가리키는 화살촉
+  jump: [
+    '...xx...',
+    '..xxxx..',
+    '.xxxxxx.',
+    'xx.xx.xx',
+    '...xx...',
+    '...xx...',
+    '..xxxx..',
+    '..xxxx..',
+  ],
+  // 에너지 확장 — 둥근 에너지 구슬
+  energy: [
+    '..xxxx..',
+    '.xxxxxx.',
+    'xxxxxxxx',
+    'xxxxxxxx',
+    'xxxxxxxx',
+    'xxxxxxxx',
+    '.xxxxxx.',
+    '..xxxx..',
+  ],
+  // 공중 조향 — 좌우로 벌어지는 화살표
+  air: [
+    '........',
+    '..a...a.',
+    '.aa...aa',
+    'aaaaaaaa',
+    'aaaaaaaa',
+    '.aa...aa',
+    '..a...a.',
+    '........',
+  ],
+  // 자석 — 말굽 자석, 끝은 빨간 극
+  magnet: [
+    '.xxxxxx.',
+    'xx....xx',
+    'xx....xx',
+    'xx....xx',
+    'xx....xx',
+    'xx....xx',
+    'rr....rr',
+    'rr....rr',
+  ],
+  // 로켓 부츠 — 부츠 아래로 뿜는 불꽃
+  rocket: [
+    '..xxxx..',
+    '..xxxx..',
+    '..xxxx..',
+    '..xxxx..',
+    'xxxxxxx.',
+    'xxxxxxx.',
+    '..ffff..',
+    '..f..f..',
+  ],
+  // 깃털 — 대각선으로 눕힌 깃털
+  feather: [
+    '.......x',
+    '......xx',
+    '.....xxx',
+    '....xxx.',
+    '...xxx..',
+    '..xxx...',
+    '.xxx....',
+    'xx......',
+  ],
+  // 방석 — 테두리와 속을 나눈 둥근 쿠션
+  cushion: [
+    '.xxxxxx.',
+    'xxxxxxxx',
+    'xwwwwwwx',
+    'xwwwwwwx',
+    'xwwwwwwx',
+    'xwwwwwwx',
+    'xxxxxxxx',
+    '.xxxxxx.',
+  ],
+  // 더블 점프 — 위아래로 겹친 화살표 두 개
+  doubleJump: [
+    '...xx...',
+    '..xxxx..',
+    '.xx..xx.',
+    '........',
+    '...xx...',
+    '..xxxx..',
+    '.xx..xx.',
+    'xx....xx',
+  ],
+}
+
+export const ICON_PALETTES: Readonly<Record<IconKind, Palette>> = {
+  jump: { x: '#f39c12' },
+  energy: { x: '#e74c3c' },
+  air: { a: '#3498db' },
+  magnet: { x: '#7f8c8d', r: '#e74c3c' },
+  rocket: { x: '#7f8c8d', f: '#e67e22' },
+  feather: { x: '#81ecec' },
+  cushion: { x: '#c96a92', w: '#e88fb0' },
+  doubleJump: { x: '#0984e3' },
 }

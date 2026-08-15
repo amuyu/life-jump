@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import {
   PLAYER_IDLE, PLAYER_JUMP, SKIN_PALETTE,
   PLATFORM_MAPS, PLATFORM_PALETTES,
-  ITEM_MAPS, ITEM_PALETTES, mapSize,
+  ITEM_MAPS, ITEM_PALETTES,
+  ICON_MAPS, ICON_PALETTES, mapSize,
 } from '../../src/data/pixelmaps'
 import * as C from '../../src/constants'
 
@@ -11,6 +12,7 @@ const ALL_MAPS: Array<[string, readonly string[]]> = [
   ['PLAYER_JUMP', PLAYER_JUMP],
   ...Object.entries(PLATFORM_MAPS),
   ...Object.entries(ITEM_MAPS),
+  ...Object.entries(ICON_MAPS),
 ]
 
 describe('픽셀맵 정합성', () => {
@@ -94,6 +96,26 @@ describe('아이템 스프라이트', () => {
   it('쓰인 문자가 전부 팔레트에 정의되어 있다', () => {
     for (const [kind, map] of Object.entries(ITEM_MAPS)) {
       const palette = ITEM_PALETTES[kind as keyof typeof ITEM_PALETTES]
+      for (const ch of new Set(map.join(''))) {
+        if (ch === '.') continue
+        expect(palette[ch], `${kind} 문자 '${ch}'`).toBeDefined()
+      }
+    }
+  })
+})
+
+describe('상점 아이콘 스프라이트', () => {
+  it('아이템과 같은 규약으로 8×8 이하다', () => {
+    for (const [kind, map] of Object.entries(ICON_MAPS)) {
+      const { w, h } = mapSize(map)
+      expect(w, kind).toBeLessThanOrEqual(8)
+      expect(h, kind).toBeLessThanOrEqual(8)
+    }
+  })
+
+  it('쓰인 문자가 전부 팔레트에 정의되어 있다', () => {
+    for (const [kind, map] of Object.entries(ICON_MAPS)) {
+      const palette = ICON_PALETTES[kind as keyof typeof ICON_PALETTES]
       for (const ch of new Set(map.join(''))) {
         if (ch === '.') continue
         expect(palette[ch], `${kind} 문자 '${ch}'`).toBeDefined()
