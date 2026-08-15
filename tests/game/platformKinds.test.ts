@@ -164,4 +164,48 @@ describe('stepMovingPlatforms', () => {
     stepMovingPlatforms(s, C.STEP, null)
     expect(mv.x).toBe(60)
   })
+
+  it('경계에 도달하면 방향을 바꿔 실제로 되돌아온다', () => {
+    const s = createGameState(defaultModifiers())
+    const mv = makePlatform(1, 60, 100, 40, 'moving')
+    s.platforms = [mv]
+
+    // 오른쪽 끝(60+20=80)까지 도달할 만큼 충분히 진행하며 최고점을 기록한다
+    let peak = mv.x
+    for (let i = 0; i < 60; i++) {
+      stepMovingPlatforms(s, C.STEP, null)
+      if (mv.x > peak) peak = mv.x
+    }
+    expect(peak).toBeCloseTo(60 + C.MOVING_RANGE, 1)
+
+    // 방향이 바뀌지 않고 경계에 멈춰 있다면 이후에도 계속 최고점에 머무른다.
+    // 실제로 되돌아왔는지는 최고점보다 확실히 낮은 위치로 내려왔는지로 확인한다.
+    for (let i = 0; i < 60; i++) {
+      stepMovingPlatforms(s, C.STEP, null)
+    }
+    expect(mv.x).toBeLessThan(peak - 1)
+  })
+
+  it('왼쪽 화면 경계 근처에서도 범위 안에 머물며 양쪽 끝까지 오간다', () => {
+    const s = createGameState(defaultModifiers())
+    // originX가 화면 왼쪽 끝(0)에 붙어 있어, 패트롤 최솟값(-20)보다
+    // 화면 클램프(0)가 먼저 걸리는 경계 사례
+    const mv = makePlatform(1, 0, 100, 40, 'moving')
+    s.platforms = [mv]
+
+    let min = mv.x
+    let max = mv.x
+    for (let i = 0; i < 300; i++) {
+      stepMovingPlatforms(s, C.STEP, null)
+      expect(mv.x).toBeGreaterThanOrEqual(0)
+      expect(mv.x + mv.width).toBeLessThanOrEqual(C.LOGICAL_W)
+      if (mv.x < min) min = mv.x
+      if (mv.x > max) max = mv.x
+    }
+
+    // 화면 경계(0)와 패트롤 최댓값(originX + MOVING_RANGE) 양쪽 다 실제로 접근해야
+    // 한쪽 끝에 멈춰버리는 회귀를 잡아낸다
+    expect(min).toBeLessThanOrEqual(0.5)
+    expect(max).toBeGreaterThanOrEqual(C.MOVING_RANGE - 0.5)
+  })
 })
