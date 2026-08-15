@@ -40,3 +40,15 @@ export const SPACE_START_Y = 9000
 
 // 단위
 export const PX_PER_M = 10
+
+// 발판
+export const PLATFORM_W_START = 40
+export const PLATFORM_W_MIN = 24
+export const GAP_Y_MIN = 32
+export const GAP_Y_START_MAX = 48
+export const GAP_Y_MAX = 72
+export const DIFFICULTY_FULL_Y = 9000    // 900m — 우주 진입 시 최대 난이도
+export const MOVING_RANGE = 20           // 중심에서 ±20px
+export const MOVING_SPEED = 25           // px/s
+export const PRUNE_MARGIN = 40           // 카메라 아래 이만큼 벗어나면 폐기
+export const GENERATE_AHEAD = LOGICAL_H  // 카메라 위로 한 화면 앞서 생성
