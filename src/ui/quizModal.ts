@@ -52,27 +52,28 @@ export function showQuiz(
   overlay.className = 'modal-overlay'
 
   const box = document.createElement('div')
-  box.className = 'panel'
+  box.className = 'panel quiz-panel'
   overlay.appendChild(box)
 
   const bar = document.createElement('div')
-  bar.className = 'timer-bar'
+  bar.className = 'quiz-timer-bar'
   const fill = document.createElement('div')
-  fill.className = 'timer-fill'
+  fill.className = 'quiz-timer-fill'
   bar.appendChild(fill)
   box.appendChild(bar)
 
   const title = document.createElement('h2')
+  title.className = 'type-heading-sm quiz-title'
   title.textContent = '퀴즈!'
   box.appendChild(title)
 
   const text = document.createElement('p')
-  text.className = 'quiz-q'
+  text.className = 'type-body-sm quiz-question'
   text.textContent = question.q
   box.appendChild(text)
 
   const choiceList = document.createElement('div')
-  choiceList.className = 'item-list'
+  choiceList.className = 'quiz-choices'
   box.appendChild(choiceList)
 
   const cleanup = (): void => {
@@ -90,6 +91,7 @@ export function showQuiz(
   const askReward = (): void => {
     box.innerHTML = ''
     const h = document.createElement('h2')
+    h.className = 'type-heading-sm quiz-title'
     h.textContent = '정답! 보상을 고르세요'
     box.appendChild(h)
 
@@ -101,7 +103,7 @@ export function showQuiz(
 
     for (const [kind, label] of options) {
       const b = document.createElement('button')
-      b.className = 'wide'
+      b.className = 'btn button-secondary quiz-reward-choice'
       b.textContent = label
       b.onclick = () => {
         cleanup()
@@ -113,7 +115,7 @@ export function showQuiz(
 
   shuffled.choices.forEach((choice, index) => {
     const b = document.createElement('button')
-    b.className = 'wide'
+    b.className = 'quiz-choice'
     b.textContent = choice
     b.onclick = () => {
       if (finished) return

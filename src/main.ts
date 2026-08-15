@@ -66,9 +66,8 @@ document.addEventListener('visibilitychange', () => {
 const persist = (): void => { writeSave(save) }
 
 function render(): void {
-  gameLayer.classList.add('hidden')
-
-  // 결과 화면은 셸(탭바/재화) 없이 독립적으로 뜬다 — 기존 동작 유지
+  // 결과 화면은 셸(탭바/재화) 없이, 마지막으로 그려진 게임 프레임 위에 뜨는
+  // 모달로 그린다 — 그래서 여기서는 gameLayer를 숨기지 않고 그냥 반환한다.
   if (lastResult !== null) {
     renderResult(uiLayer, lastResult.run, lastResult.isNewBest, {
       onRetry: enterLoadout,
@@ -76,6 +75,8 @@ function render(): void {
     })
     return
   }
+
+  gameLayer.classList.add('hidden')
 
   const body = renderShell(uiLayer, save, tab, {
     onTab(next) {
@@ -108,7 +109,9 @@ function render(): void {
       renderLobby(body, save, {
         onPlay: enterLoadout,
         onShop() { tab = 'shop'; render() },
-        onWardrobe() { tab = 'wardrobe'; render() },
+        // 소모품 칩은 표시 + 로드아웃 진입점일 뿐이다 — 여기서 아무것도
+        // 자동으로 장착하지 않는다. 실제 장착/해제는 loadout의 onToggle이 한다.
+        onLoadout: enterLoadout,
       })
       break
     case 'shop':
@@ -167,12 +170,16 @@ function renderRecordsPlaceholder(mount: HTMLElement): void {
   const panel = document.createElement('div')
   panel.className = 'panel'
   panel.innerHTML = `
-    <div class="panel-header"><h2>기록</h2></div>
-    <p class="tagline">준비 중입니다.</p>`
+    <h2 class="type-heading-sm">기록</h2>
+    <p class="type-body-sm" style="color: var(--text-muted); margin-top: var(--space-sm)">준비 중입니다.</p>`
   mount.appendChild(panel)
 }
 
+// 탭 진입점 — 판이 실행 중이 아닐 때만 호출되는 경로들이지만, 방어적으로
+// state를 항상 비운다. 그래야 나중에 어떤 경로가 판 도중 이 함수를 부르더라도
+// 화면 아래에서 루프가 조용히 계속 돌지 않는다.
 function goToLobby(): void {
+  state = null
   tab = 'lobby'
   showingLoadout = false
   lastResult = null
@@ -180,6 +187,7 @@ function goToLobby(): void {
 }
 
 function enterLoadout(): void {
+  state = null
   tab = 'lobby'
   showingLoadout = true
   lastResult = null
@@ -207,7 +215,8 @@ function finishRun(run: GameState['run']): void {
   const { isNewBest } = computeFinishRun(save, run)
   persist()
 
-  gameLayer.classList.add('hidden')
+  // gameLayer는 일부러 숨기지 않는다 — 결과 화면은 마지막으로 그려진 프레임
+  // 위에 뜨는 모달이다. render()가 lastResult를 보고 셸을 건너뛴다.
   state = null
   lastResult = { run, isNewBest }
   render()

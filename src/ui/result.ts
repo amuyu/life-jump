@@ -1,4 +1,7 @@
 import type { RunState } from '../game/state'
+import type { PixelMap, Palette } from '../data/pixelmaps'
+import { ITEM_MAPS, ITEM_PALETTES } from '../data/pixelmaps'
+import { spriteCanvas } from './spritePreview'
 import * as C from '../constants'
 
 export interface ResultCallbacks {
@@ -6,34 +9,71 @@ export interface ResultCallbacks {
   onLobby(): void
 }
 
+function actionButton(
+  label: string, variant: 'primary' | 'secondary', onClick: () => void,
+): HTMLButtonElement {
+  const button = document.createElement('button')
+  button.className = `btn button-${variant}`
+  button.textContent = label
+  button.onclick = onClick
+  return button
+}
+
+function statCard(map: PixelMap, palette: Palette, amount: number, label: string): HTMLElement {
+  const card = document.createElement('div')
+  card.className = 'result-stat'
+  card.appendChild(spriteCanvas(map, palette, 3))
+  const text = document.createElement('div')
+  text.innerHTML = `
+    <div class="type-body-md-bold">+${amount}</div>
+    <div class="type-caption result-stat-label">${label}</div>`
+  card.appendChild(text)
+  return card
+}
+
+/**
+ * 게임 레이어(마지막 프레임이 얼어붙은 캔버스) 위에 뜨는 모달로 그린다.
+ * gameLayer를 숨기는 것은 main.ts의 몫이다 — 여기서는 오버레이만 그린다.
+ */
 export function renderResult(
   mount: HTMLElement, run: RunState, isNewBest: boolean, cb: ResultCallbacks,
 ): void {
   mount.innerHTML = ''
 
-  const panel = document.createElement('div')
-  panel.className = 'panel'
+  const overlay = document.createElement('div')
+  overlay.className = 'modal-overlay'
+
+  const box = document.createElement('div')
+  box.className = 'panel result-panel'
+  overlay.appendChild(box)
+
+  const tag = document.createElement('div')
+  tag.className = 'type-caption-bold result-tag'
+  tag.textContent = isNewBest ? '신기록!' : '기록'
+  box.appendChild(tag)
 
   const meters = Math.floor(run.maxHeight / C.PX_PER_M)
-  panel.innerHTML = `
-    <h2>${isNewBest ? '신기록!' : '기록'}</h2>
-    <p class="big-score">${meters}m</p>
-    <div class="stats">
-      <div><span>얻은 실</span><strong>${run.thread}</strong></div>
-      <div><span>얻은 코인</span><strong>${run.coins}</strong></div>
-    </div>`
+  const height = document.createElement('div')
+  height.className = 'type-display-lg result-height'
+  height.textContent = `${meters}m`
+  box.appendChild(height)
 
-  const retry = document.createElement('button')
-  retry.className = 'wide primary'
-  retry.textContent = '다시 도전'
-  retry.onclick = () => cb.onRetry()
-  panel.appendChild(retry)
+  const stats = document.createElement('div')
+  stats.className = 'result-stats'
+  stats.appendChild(statCard(ITEM_MAPS.thread, ITEM_PALETTES.thread, run.thread, '실'))
+  stats.appendChild(statCard(ITEM_MAPS.coin, ITEM_PALETTES.coin, run.coins, '코인'))
+  box.appendChild(stats)
 
-  const lobby = document.createElement('button')
-  lobby.className = 'wide'
-  lobby.textContent = '로비로'
-  lobby.onclick = () => cb.onLobby()
-  panel.appendChild(lobby)
+  const note = document.createElement('p')
+  note.className = 'type-caption result-note'
+  note.textContent = '획득한 재화는 전부 보존됩니다. 잃은 것은 높이뿐입니다.'
+  box.appendChild(note)
 
-  mount.appendChild(panel)
+  const actions = document.createElement('div')
+  actions.className = 'result-actions'
+  actions.appendChild(actionButton('다시 도전', 'primary', () => cb.onRetry()))
+  actions.appendChild(actionButton('로비로', 'secondary', () => cb.onLobby()))
+  box.appendChild(actions)
+
+  mount.appendChild(overlay)
 }

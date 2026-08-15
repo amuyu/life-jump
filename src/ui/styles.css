@@ -26,62 +26,16 @@ canvas { image-rendering: pixelated; }
   padding: 16px;
 }
 
-.panel-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
-.panel-header h2 { font-size: var(--type-heading-sm-size); font-weight: var(--type-heading-sm-weight); color: var(--text-primary); }
-
-.item-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-
-.item-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px; background: var(--surface-soft); border-radius: var(--radius-md);
-}
-.item-name { flex: 1; font-size: 13px; }
-.item-cost { font-size: 12px; color: var(--text-muted); }
-.item-desc { font-size: 11px; color: var(--text-disabled); width: 100%; }
-
-/* Legacy Task-1 button rule. Scoped off .panel-wide (the class wardrobe/shop
-   opt into) so the rewritten screens fall through to the component-recipe
-   classes (btn button-primary, etc) in components.css. lobby.ts, loadout.ts,
-   and result.ts still use a bare .panel and haven't been rewritten yet — they
-   must keep computing to these values until Task 5. */
-.panel:not(.panel-wide) button, .modal-overlay button {
-  padding: var(--space-xxs) var(--space-sm); font-size: var(--type-caption-size); border: 0; border-radius: var(--radius-sm);
-  background: var(--color-primary); color: var(--color-on-primary); cursor: pointer;
-}
-.panel:not(.panel-wide) button:active, .modal-overlay button:active { transform: scale(0.98); }
-.panel:not(.panel-wide) button:disabled, .modal-overlay button:disabled { background: var(--color-disabled-text); color: var(--text-disabled); cursor: default; }
-.panel:not(.panel-wide) button.wide, .modal-overlay button.wide { width: 100%; padding: 9px; }
-.panel:not(.panel-wide) button.selected, .modal-overlay button.selected { background: var(--color-success); color: var(--color-on-primary); }
-
 .section { font-size: 13px; color: var(--text-muted); margin: 10px 0 6px; }
-.item-row small { color: var(--text-disabled); font-size: 11px; }
-.item-row { flex-wrap: wrap; }
 
 .modal-overlay {
   position: fixed; inset: 0;
   background: rgba(10, 19, 23, 0.72);
   display: flex; align-items: center; justify-content: center;
   /* .game-layer sits at z-index 20 as a fixed overlay while a run is in
-     progress; the quiz modal must still win over it. */
+     progress; the quiz and result modals must still win over it. */
   z-index: 30;
 }
-
-.timer-bar { height: 5px; background: var(--border-soft); border-radius: var(--radius-sm); margin-bottom: 12px; overflow: hidden; }
-.timer-fill { height: 100%; width: 100%; background: var(--color-warning); }
-.quiz-q { font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
-
-.logo { font-family: var(--font-display); font-size: 28px; letter-spacing: 2px; text-align: center; margin-bottom: 4px; color: var(--text-primary); }
-.tagline { font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 16px; }
-
-.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-.stats div { background: var(--surface-soft); border-radius: var(--radius-md); padding: 8px; text-align: center; }
-.stats span { display: block; font-size: 11px; color: var(--text-muted); }
-.stats strong { font-size: 16px; color: var(--text-primary); }
-
-.big-score { font-size: 40px; text-align: center; color: var(--color-warning); margin: 8px 0 16px; }
-
-.panel button.primary, .modal-overlay button.primary { background: var(--color-success); }
-.panel button.wide + button.wide, .modal-overlay button.wide + button.wide { margin-top: 6px; }
 
 /* Fixed overlay so the canvas keeps its own coordinate space (fitScreen
    measures window.innerWidth/innerHeight, not this element) while the
@@ -139,8 +93,8 @@ canvas { image-rendering: pixelated; }
 
 /* ── Wardrobe — 5-column outfit grid ──────────────────────────
    .panel is a fixed 320px list column (built for the old text-row
-   screens); the grid needs real width to breathe, so wardrobe/shop
-   opt into .panel-wide instead of overriding .panel itself. */
+   screens); the grid needs real width to breathe, so wardrobe/shop/
+   loadout opt into .panel-wide instead of overriding .panel itself. */
 .panel-wide { width: 100%; max-width: 960px; }
 
 .wardrobe-header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-xl); flex-wrap: wrap; }
@@ -204,13 +158,111 @@ canvas { image-rendering: pixelated; }
 .consumable-stock { color: var(--text-muted); white-space: nowrap; }
 .consumable-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; gap: var(--space-sm); }
 
+/* ── Lobby — hero preview + info column ───────────────────────── */
+.lobby-hero {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: var(--space-xxl);
+  align-items: center;
+  width: 100%;
+  max-width: 1100px;
+  padding: var(--space-xxl) 0;
+}
+
+.lobby-preview {
+  border-radius: var(--radius-xxxl);
+  background: linear-gradient(180deg, #cfe6f7 0%, #eef4f8 60%, var(--surface-soft) 100%);
+  height: 420px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+}
+.lobby-preview canvas { margin-bottom: var(--space-xxl); }
+
+.lobby-info { display: flex; flex-direction: column; gap: var(--space-xl); }
+
+.lobby-stat-label { color: var(--text-muted); }
+.lobby-stat-value { line-height: 1; margin-top: var(--space-xxs); color: var(--text-primary); }
+.lobby-stat-sub { color: var(--text-muted); margin-top: var(--space-sm); }
+
+.lobby-equipped { display: flex; align-items: center; gap: var(--space-md); }
+
+.lobby-consumables { display: flex; flex-direction: column; gap: var(--space-sm); max-width: 460px; }
+.lobby-consumables-label { color: var(--text-muted); }
+.lobby-chip-row { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.lobby-chip {
+  display: inline-flex; align-items: center; gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-full);
+  background: var(--surface-card);
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.lobby-chip-empty { color: var(--text-muted); }
+
+.lobby-actions { display: flex; flex-wrap: wrap; gap: var(--space-md); padding-top: var(--space-xxs); }
+
+.lobby-hint { color: var(--text-muted); }
+
+/* ── Result modal ──────────────────────────────────────────────── */
+.panel.result-panel { width: 460px; max-width: calc(100vw - 48px); padding: var(--space-xxl); }
+.result-tag { color: var(--text-muted); }
+.result-height { line-height: 1; margin-top: var(--space-xs); }
+.result-stats { display: flex; gap: var(--space-md); margin: var(--space-xl) 0; }
+.result-stat {
+  flex: 1; display: flex; align-items: center; gap: var(--space-sm);
+  border: 1px solid var(--border-soft); border-radius: var(--radius-lg); padding: var(--space-base);
+}
+.result-stat-label { color: var(--text-muted); }
+.result-note { color: var(--text-muted); }
+.result-actions { display: flex; gap: var(--space-sm); margin-top: var(--space-xl); }
+.result-actions .btn { flex: 1; }
+
+/* ── Quiz modal ────────────────────────────────────────────────── */
+.panel.quiz-panel { width: 480px; max-width: calc(100vw - 48px); padding: var(--space-xxl); }
+.quiz-title { margin-bottom: var(--space-md); }
+.quiz-timer-bar { height: 4px; background: var(--border-soft); border-radius: var(--radius-full); margin-bottom: var(--space-lg); overflow: hidden; }
+.quiz-timer-fill { height: 100%; width: 100%; background: var(--text-primary); }
+.quiz-question { margin-bottom: var(--space-lg); color: var(--text-body); }
+.quiz-choices { display: flex; flex-direction: column; gap: var(--space-xs); }
+.quiz-choice {
+  width: 100%;
+  text-align: left;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-soft);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+}
+.quiz-choice:active { transform: scale(0.98); }
+.quiz-reward-choice { width: 100%; }
+.quiz-reward-choice + .quiz-reward-choice { margin-top: var(--space-xs); }
+
+/* ── Loadout — consumable list (reuses .upgrade-card from Shop) ─── */
+.loadout-header { margin-bottom: var(--space-xl); }
+.loadout-sub { color: var(--text-muted); margin-top: var(--space-xs); }
+.loadout-list { display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-xl); }
+.loadout-stock { color: var(--text-muted); margin-left: var(--space-xxs); }
+.loadout-footer { display: flex; gap: var(--space-md); }
+.loadout-footer .btn { flex: 1; }
+
 /* ── Mobile — zero media queries existed before this file; this is the
    only breakpoint the shell needs: keep the tab bar wrapping and the
    header stacked so nothing overflows a narrow viewport. ─────────── */
 @media (max-width: 480px) {
   .shell-header { flex-direction: column; align-items: flex-start; }
   .tab-bar { justify-content: center; padding: var(--space-sm) var(--space-xs); }
-  .stats { grid-template-columns: 1fr; }
+  .lobby-hero { grid-template-columns: 1fr; }
+  .lobby-preview { height: 280px; }
   .outfit-grid { grid-template-columns: repeat(2, 1fr); }
   .consumable-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .lobby-hero { grid-template-columns: 1fr; padding: var(--space-xl) 0; }
+  .lobby-preview { height: 320px; }
 }
