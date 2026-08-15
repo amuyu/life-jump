@@ -16,6 +16,7 @@ export const JUMP_CUTOFF = 300
 export const MOVE_SPEED = 90
 export const MAX_FALL = 600
 export const SPRING_V = 750
+export const CRUMBLE_DELAY = 0.3
 
 // 파생값
 export const MAX_JUMP_HEIGHT = (JUMP_V * JUMP_V) / (2 * GRAVITY)  // 96

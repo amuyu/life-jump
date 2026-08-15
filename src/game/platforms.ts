@@ -117,3 +117,62 @@ export function prunePlatforms(state: GameState): void {
   const floor = state.camera.y - C.PRUNE_MARGIN
   state.platforms = state.platforms.filter((p) => p.y >= floor)
 }
+
+export function applyLandingEffect(state: GameState, platform: Platform): void {
+  if (platform.kind === 'spring') {
+    state.player.vy = C.SPRING_V
+    state.player.onGround = false
+    state.player.doubleJumpUsed = false
+    return
+  }
+
+  if (platform.kind === 'crumble' && platform.crumbleAt === null) {
+    platform.crumbleAt = state.run.time + C.CRUMBLE_DELAY
+  }
+}
+
+export function stepCrumbling(state: GameState): void {
+  for (const p of state.platforms) {
+    if (p.crumbleAt !== null && !p.dead && state.run.time >= p.crumbleAt) {
+      p.dead = true
+    }
+  }
+}
+
+export function stepMovingPlatforms(
+  state: GameState,
+  dt: number,
+  standingOn: Platform | null,
+): void {
+  for (const p of state.platforms) {
+    if (p.kind !== 'moving' || p.dead) continue
+
+    const before = p.x
+    let next = p.x + p.movingDir * C.MOVING_SPEED * dt
+
+    const min = p.movingOriginX - C.MOVING_RANGE
+    const max = p.movingOriginX + C.MOVING_RANGE
+
+    if (next > max) {
+      next = max
+      p.movingDir = -1
+    } else if (next < min) {
+      next = min
+      p.movingDir = 1
+    }
+
+    // 화면 밖으로 나가지 않게 자른다
+    if (next < 0) { next = 0; p.movingDir = 1 }
+    if (next + p.width > C.LOGICAL_W) { next = C.LOGICAL_W - p.width; p.movingDir = -1 }
+
+    p.x = next
+
+    // 이 발판 위에 서 있으면 플레이어도 같이 옮긴다
+    if (standingOn !== null && standingOn.id === p.id) {
+      state.player.x += next - before
+      if (state.player.x < 0) state.player.x = 0
+      const maxX = C.LOGICAL_W - C.PLAYER_W
+      if (state.player.x > maxX) state.player.x = maxX
+    }
+  }
+}
