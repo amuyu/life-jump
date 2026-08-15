@@ -135,6 +135,73 @@ canvas { image-rendering: pixelated; }
 
 .shell-body { flex: 1; display: flex; justify-content: center; padding: 0 var(--space-base) var(--space-xxl); }
 
+/* ── Wardrobe — 5-column outfit grid ──────────────────────────
+   .panel is a fixed 320px list column (built for the old text-row
+   screens); the grid needs real width to breathe, so wardrobe/shop
+   opt into .panel-wide instead of overriding .panel itself. */
+.panel-wide { width: 100%; max-width: 960px; }
+
+.wardrobe-header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-xl); flex-wrap: wrap; }
+.wardrobe-sub { color: var(--text-muted); margin-top: var(--space-xs); }
+.wardrobe-count { color: var(--text-muted); white-space: nowrap; }
+
+.outfit-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-lg); }
+.outfit-card { display: flex; flex-direction: column; gap: var(--space-sm); }
+
+.outfit-preview {
+  position: relative;
+  height: 140px;
+  border-radius: var(--radius-xl);
+  background: var(--surface-soft);
+  border: 2px solid transparent;
+  display: flex; align-items: center; justify-content: center;
+}
+.outfit-preview-equipped { border-color: var(--color-success); }
+.outfit-badge { position: absolute; top: 8px; left: 8px; }
+
+.outfit-info { display: flex; flex-direction: column; gap: var(--space-xxs); }
+.outfit-cost-row { display: flex; align-items: center; gap: var(--space-xxs); }
+.outfit-cost-owned { color: var(--text-disabled); }
+.outfit-cost-short { color: var(--color-warning); }
+.outfit-action { width: 100%; }
+
+/* ── Shop — upgrade cards + consumable grid ───────────────────── */
+.shop-header { display: flex; flex-direction: column; gap: var(--space-xs); margin-bottom: var(--space-xl); }
+.shop-sub { color: var(--text-muted); }
+.shop-section-heading { margin: var(--space-md) 0 var(--space-lg); }
+
+.upgrade-list { display: flex; flex-direction: column; gap: var(--space-md); margin-bottom: var(--space-xxl); }
+.upgrade-card {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-lg);
+  border: 1px solid var(--border-soft); border-radius: var(--radius-xl); padding: var(--space-lg);
+}
+.upgrade-icon {
+  flex: 0 0 56px; width: 56px; height: 56px; border-radius: var(--radius-lg);
+  background: var(--surface-soft); display: flex; align-items: center; justify-content: center;
+}
+.upgrade-info { flex: 1 1 200px; min-width: 160px; display: flex; flex-direction: column; gap: var(--space-xxs); }
+.upgrade-desc { color: var(--text-muted); }
+.upgrade-level { display: flex; align-items: center; gap: 4px; }
+.upgrade-level-label { color: var(--text-muted); margin-left: var(--space-xxs); white-space: nowrap; }
+.level-dots { display: flex; align-items: center; gap: 4px; }
+.level-dot { width: 10px; height: 10px; border-radius: var(--radius-circle); background: var(--border-soft); }
+.level-dot-filled { background: var(--color-success); }
+.upgrade-price { display: flex; align-items: center; gap: var(--space-xxs); white-space: nowrap; }
+
+.consumable-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); }
+.consumable-card {
+  display: flex; flex-direction: column; gap: var(--space-md);
+  border: 1px solid var(--border-soft); border-radius: var(--radius-xl); padding: var(--space-lg);
+}
+.consumable-icon {
+  height: 90px; border-radius: var(--radius-lg); background: var(--surface-soft);
+  display: flex; align-items: center; justify-content: center;
+}
+.consumable-info { display: flex; flex-direction: column; gap: var(--space-xxs); }
+.consumable-info-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-xs); }
+.consumable-stock { color: var(--text-muted); white-space: nowrap; }
+.consumable-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; gap: var(--space-sm); }
+
 /* ── Mobile — zero media queries existed before this file; this is the
    only breakpoint the shell needs: keep the tab bar wrapping and the
    header stacked so nothing overflows a narrow viewport. ─────────── */
@@ -142,4 +209,6 @@ canvas { image-rendering: pixelated; }
   .shell-header { flex-direction: column; align-items: flex-start; }
   .tab-bar { justify-content: center; padding: var(--space-sm) var(--space-xs); }
   .stats { grid-template-columns: 1fr; }
+  .outfit-grid { grid-template-columns: repeat(2, 1fr); }
+  .consumable-grid { grid-template-columns: repeat(2, 1fr); }
 }
