@@ -41,10 +41,30 @@ function makeSpecks(count: number, seedStep: number): Speck[] {
 
 const STARS = makeSpecks(60, 13)
 const CLOUDS = makeSpecks(14, 29)
+const BIRDS = makeSpecks(7, 41)
+
+// 운석·행성은 "가끔"이어야 하므로(스펙 6절) 한 화면이 아니라 네 화면 높이의
+// 띠에 흩뿌린다 — 한 화면에 하나 보일까 말까 한 밀도가 된다.
+const SPACE_BAND = C.LOGICAL_H * 4
+const SPACE_OBJECTS = makeSpecks(5, 71)
+const PLANET_COLORS = ['#e17055', '#00b894', '#0984e3', '#fdcb6e', '#a29bfe']
+
+/** 오버레이에서 색이 칠해진 칸들 — 반짝임이 앉을 자리 */
+function decoratedCells(outfit: Outfit): Array<{ x: number; y: number }> {
+  if (!outfit.sparkle || outfit.overlay === null) return []
+  const out: Array<{ x: number; y: number }> = []
+  outfit.overlay.map.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      if (row[x] !== '.') out.push({ x, y })
+    }
+  })
+  return out
+}
 
 export function createRenderer(screen: Screen, outfitId: string): Renderer {
   const cache = spriteCache()
   let outfit: Outfit = outfitById(outfitId)
+  let sparkleCells = decoratedCells(outfit)
 
   const platformTile = (kind: Platform['kind']): Sprite =>
     cache.get(`plat:${kind}`, () =>
@@ -72,6 +92,58 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
       return base
     })
 
+  /** 하늘 구간의 새 (스펙 6절). 구름과 같은 패럴랙스 위에 좌우로 난다 */
+  const drawBirds = (state: GameState, alpha: number): void => {
+    const ctx = screen.ctx
+    ctx.fillStyle = '#39394d'
+    for (const b of BIRDS) {
+      const y = ((b.y + state.camera.y * b.speed) % C.LOGICAL_H + C.LOGICAL_H) % C.LOGICAL_H
+      const sy = Math.round(C.LOGICAL_H - y)
+      const drift = b.x + state.run.time * (7 + b.size * 5)
+      const x = Math.round(((drift % C.LOGICAL_W) + C.LOGICAL_W) % C.LOGICAL_W)
+
+      // 날갯짓 — 위/아래 두 자세를 오간다
+      const up = Math.sin(state.run.time * 7 + b.x) > 0 ? 1 : 0
+      ctx.globalAlpha = alpha * 0.8
+      ctx.fillRect(x, sy, 1, 1)
+      ctx.fillRect(x - 2, sy - up, 2, 1)
+      ctx.fillRect(x + 1, sy - up, 2, 1)
+    }
+    ctx.globalAlpha = 1
+  }
+
+  /** 우주 구간에 가끔 지나가는 운석·행성 (스펙 6절) */
+  const drawSpaceObjects = (state: GameState, alpha: number): void => {
+    const ctx = screen.ctx
+    ctx.globalAlpha = alpha
+    SPACE_OBJECTS.forEach((o, i) => {
+      // 네 화면 높이의 띠 안에서 순환한다
+      const raw = o.y * 4 + state.camera.y * o.speed * 0.5
+      const y = ((raw % SPACE_BAND) + SPACE_BAND) % SPACE_BAND
+      const sy = Math.round(C.LOGICAL_H - y)
+      if (sy < -24 || sy > C.LOGICAL_H + 24) return
+
+      if (i % 2 === 0) {
+        // 행성 — 고리를 두른 원반
+        const x = Math.round(o.x)
+        ctx.fillStyle = PLANET_COLORS[i % PLANET_COLORS.length]!
+        ctx.fillRect(x + 2, sy, 7, 11)
+        ctx.fillRect(x, sy + 2, 11, 7)
+        ctx.fillStyle = 'rgba(255,255,255,0.55)'
+        ctx.fillRect(x - 2, sy + 4, 15, 1)
+      } else {
+        // 운석 — 대각선 꼬리를 끌고 지나간다
+        const drift = o.x + state.run.time * 16
+        const x = Math.round(((drift % (C.LOGICAL_W + 40)) + C.LOGICAL_W + 40) % (C.LOGICAL_W + 40)) - 20
+        ctx.fillStyle = '#ffeaa7'
+        ctx.fillRect(x, sy, 2, 2)
+        ctx.fillStyle = 'rgba(255,234,167,0.45)'
+        for (let t = 1; t <= 5; t++) ctx.fillRect(x - t * 2, sy - t, 2, 1)
+      }
+    })
+    ctx.globalAlpha = 1
+  }
+
   const drawBackground = (state: GameState): void => {
     const ctx = screen.ctx
     const v = zoneVisual(state.camera.y + C.LOGICAL_H / 2)
@@ -94,6 +166,8 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
       ctx.globalAlpha = 1
     }
 
+    if (v.spaceObjectAlpha > 0.01) drawSpaceObjects(state, v.spaceObjectAlpha)
+
     if (v.cloudAlpha > 0.01) {
       ctx.fillStyle = '#ffffff'
       ctx.globalAlpha = v.cloudAlpha * 0.5
@@ -105,6 +179,9 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
       }
       ctx.globalAlpha = 1
     }
+
+    // 새는 구름보다 앞(위)에 그린다 — 구름 사이를 나는 것처럼 보인다
+    if (v.birdAlpha > 0.01) drawBirds(state, v.birdAlpha)
 
     // 시작 지점(월드 y=0) 아래는 땅 — normal 발판과 같은 팔레트를 써서 같은 재질로
     // 보이게 한다. 같은 좌표 변환을 쓰므로 카메라가 올라가 화면 밖으로 나가면
@@ -174,8 +251,23 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
     }
 
     const sprite = playerSprite(!p.onGround)
+    const sx = Math.round(p.x)
     const sy = Math.round(C.LOGICAL_H - (p.y - state.camera.y)) - C.PLAYER_H
-    ctx.drawImage(sprite, Math.round(p.x), sy)
+    ctx.drawImage(sprite, sx, sy)
+
+    // 반짝임 애니메이션 (스펙 9절 — 은하 드레스). 스프라이트는 캐시에 구워지므로
+    // 캐시를 다시 굽는 대신 그 위에 픽셀 몇 개를 덧그린다.
+    if (sparkleCells.length > 0) {
+      ctx.fillStyle = '#ffffff'
+      const base = Math.floor(state.run.time * 7)
+      for (let k = 0; k < 3; k++) {
+        const idx = (base + k * 5) % sparkleCells.length
+        const cell = sparkleCells[idx]!
+        ctx.globalAlpha = 0.45 + 0.55 * Math.abs(Math.sin(state.run.time * 9 + idx))
+        ctx.fillRect(sx + cell.x, sy + cell.y, 1, 1)
+      }
+      ctx.globalAlpha = 1
+    }
   }
 
   return {
@@ -189,6 +281,7 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
     },
     setOutfit(id: string): void {
       outfit = outfitById(id)
+      sparkleCells = decoratedCells(outfit)
       cache.clear()
     },
   }

@@ -51,6 +51,8 @@ describe('zoneVisual — 연속성 (이 태스크의 존재 이유)', () => {
       const after = zoneVisual(boundary + 1)
       expect(Math.abs(before.cloudAlpha - after.cloudAlpha)).toBeLessThan(0.02)
       expect(Math.abs(before.starAlpha - after.starAlpha)).toBeLessThan(0.02)
+      expect(Math.abs(before.birdAlpha - after.birdAlpha)).toBeLessThan(0.02)
+      expect(Math.abs(before.spaceObjectAlpha - after.spaceObjectAlpha)).toBeLessThan(0.02)
     }
   })
 })
@@ -75,7 +77,30 @@ describe('zoneVisual — 값 범위', () => {
       expect(v.cloudAlpha).toBeLessThanOrEqual(1)
       expect(v.starAlpha).toBeGreaterThanOrEqual(0)
       expect(v.starAlpha).toBeLessThanOrEqual(1)
+      expect(v.birdAlpha).toBeGreaterThanOrEqual(0)
+      expect(v.birdAlpha).toBeLessThanOrEqual(1)
+      expect(v.spaceObjectAlpha).toBeGreaterThanOrEqual(0)
+      expect(v.spaceObjectAlpha).toBeLessThanOrEqual(1)
     }
+  })
+})
+
+describe('zoneVisual — 구간별 요소 (스펙 6절)', () => {
+  it('새는 하늘 구간에만 산다', () => {
+    // 땅 바닥엔 없고, 하늘 한복판에서 가장 진하고, 우주 깊은 곳엔 없다
+    expect(zoneVisual(0).birdAlpha).toBe(0)
+    expect(zoneVisual(6000).birdAlpha).toBeGreaterThan(zoneVisual(1000).birdAlpha)
+    expect(zoneVisual(6000).birdAlpha).toBeGreaterThan(zoneVisual(9000).birdAlpha)
+    expect(zoneVisual(20000).birdAlpha).toBe(0)
+  })
+
+  it('운석·행성은 하늘 아래에는 없고 우주로 갈수록 진해진다', () => {
+    expect(zoneVisual(0).spaceObjectAlpha).toBe(0)
+    expect(zoneVisual(3000).spaceObjectAlpha).toBe(0)
+    expect(zoneVisual(C.SPACE_START_Y).spaceObjectAlpha)
+      .toBeGreaterThan(zoneVisual(C.SKY_START_Y).spaceObjectAlpha)
+    expect(zoneVisual(20000).spaceObjectAlpha)
+      .toBeGreaterThan(zoneVisual(C.SPACE_START_Y).spaceObjectAlpha)
   })
 })
 

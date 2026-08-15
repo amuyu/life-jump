@@ -72,6 +72,22 @@ describe('장식 레이어', () => {
   })
 })
 
+describe('반짝임 애니메이션 (스펙 9절)', () => {
+  it('가장 비싼 은하 드레스만 반짝인다', () => {
+    const sparkling = OUTFITS.filter((o) => o.sparkle)
+    expect(sparkling.map((o) => o.id)).toEqual(['galaxy'])
+
+    const priciest = [...OUTFITS].sort((a, b) => b.threadCost - a.threadCost)[0]!
+    expect(priciest.id).toBe('galaxy')
+  })
+
+  it('반짝일 자리가 실제로 있다 — 오버레이가 비어 있으면 연출이 없다', () => {
+    const galaxy = outfitById('galaxy')
+    expect(galaxy.overlay).not.toBeNull()
+    expect(galaxy.overlay!.map.join('')).toContain('k')
+  })
+})
+
 describe('outfitById', () => {
   it('id로 찾는다', () => {
     expect(outfitById(DEFAULT_OUTFIT_ID).id).toBe(DEFAULT_OUTFIT_ID)

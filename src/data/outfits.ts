@@ -9,6 +9,11 @@ export interface Outfit {
   palette: Palette
   /** 캐릭터 위에 겹칠 장식. 없으면 null */
   overlay: { map: readonly string[]; palette: Palette } | null
+  /**
+   * 반짝임 애니메이션 (스펙 9절 — 은하 드레스). 스프라이트는 캐시에 구워지므로
+   * 시간에 따라 변하는 연출은 렌더러가 그릴 때 덧그린다.
+   */
+  sparkle: boolean
 }
 
 const EMPTY_ROW = '............'
@@ -33,6 +38,7 @@ export const OUTFITS: readonly Outfit[] = [
     threadCost: 0,
     palette: { c: '#3498db' },
     overlay: null,
+    sparkle: false,
   },
   {
     id: 'striped',
@@ -43,6 +49,7 @@ export const OUTFITS: readonly Outfit[] = [
       map: overlayRows({ 9: '.nnnnnnnnnn.', 11: '..nnnnnnnn..' }),
       palette: { n: '#2c3e50' },
     },
+    sparkle: false,
   },
   {
     id: 'raincoat',
@@ -54,6 +61,7 @@ export const OUTFITS: readonly Outfit[] = [
       map: overlayRows({ 0: '...vvvvvv...', 1: '..vvvvvvvv..', 2: '.vvvvvvvvvv.' }),
       palette: { v: '#e67e22' },
     },
+    sparkle: false,
   },
   {
     id: 'overalls',
@@ -64,6 +72,7 @@ export const OUTFITS: readonly Outfit[] = [
       map: overlayRows({ 8: '..b......b..', 9: '..b......b..' }),
       palette: { b: '#f39c12' },
     },
+    sparkle: false,
   },
   {
     id: 'floral',
@@ -74,6 +83,7 @@ export const OUTFITS: readonly Outfit[] = [
       map: overlayRows({ 10: '..f..f..f...', 12: '.ffffffffff.', 13: '.ffffffffff.' }),
       palette: { f: '#ffeaa7' },
     },
+    sparkle: false,
   },
   {
     id: 'hoodie',
@@ -84,6 +94,7 @@ export const OUTFITS: readonly Outfit[] = [
       map: overlayRows({ 2: '.uuuuuuuuuu.', 3: '.u........u.', 9: '.....uu.....' }),
       palette: { u: '#2d3436' },
     },
+    sparkle: false,
   },
   {
     id: 'wizard',
@@ -101,6 +112,7 @@ export const OUTFITS: readonly Outfit[] = [
       }),
       palette: { w: '#341f97', s: '#feca57' },
     },
+    sparkle: false,
   },
   {
     id: 'knight',
@@ -115,6 +127,7 @@ export const OUTFITS: readonly Outfit[] = [
       }),
       palette: { m: '#dfe6e9' },
     },
+    sparkle: false,
   },
   {
     id: 'spacesuit',
@@ -132,6 +145,7 @@ export const OUTFITS: readonly Outfit[] = [
       }),
       palette: { g: '#74b9ff', o: '#b2bec3' },
     },
+    sparkle: false,
   },
   {
     id: 'galaxy',
@@ -148,6 +162,7 @@ export const OUTFITS: readonly Outfit[] = [
       }),
       palette: { k: '#a29bfe' },
     },
+    sparkle: true,
   },
 ]
 
