@@ -54,6 +54,7 @@ export interface GameState {
   highestGeneratedY: number
   paused: boolean
   pendingQuiz: { platformY: number } | null
+  standingOnId: number | null
 }
 
 export interface RunModifiers {
@@ -145,5 +146,6 @@ export function createGameState(mods: RunModifiers): GameState {
     highestGeneratedY: baseY,
     paused: false,
     pendingQuiz: null,
+    standingOnId: 0,
   }
 }
