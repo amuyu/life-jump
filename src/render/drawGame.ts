@@ -67,24 +67,6 @@ export function createRenderer(screen: Screen): Renderer {
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, C.LOGICAL_W, C.LOGICAL_H)
 
-    // 시작 지점(월드 y=0) 아래는 땅 — normal 발판과 같은 팔레트를 써서 같은 재질로
-    // 보이게 한다. 같은 좌표 변환을 쓰므로 카메라가 올라가 화면 밖으로 나가면
-    // (worldGroundY >= LOGICAL_H) 별도 처리 없이 자연히 그려지지 않는다.
-    const worldGroundY = Math.round(C.LOGICAL_H - (0 - state.camera.y))
-    if (worldGroundY < C.LOGICAL_H) {
-      const groundPalette = PLATFORM_PALETTES.normal
-      const grassH = 2
-      const grassY = Math.max(0, worldGroundY)
-      ctx.fillStyle = groundPalette['g']!
-      ctx.fillRect(0, grassY, C.LOGICAL_W, Math.min(grassH, C.LOGICAL_H - grassY))
-
-      const dirtY = Math.max(0, worldGroundY + grassH)
-      if (dirtY < C.LOGICAL_H) {
-        ctx.fillStyle = groundPalette['d']!
-        ctx.fillRect(0, dirtY, C.LOGICAL_W, C.LOGICAL_H - dirtY)
-      }
-    }
-
     if (v.starAlpha > 0.01) {
       ctx.fillStyle = '#ffffff'
       for (const s of STARS) {
@@ -107,6 +89,26 @@ export function createRenderer(screen: Screen): Renderer {
         ctx.fillRect(Math.round(c.x) + 5, sy - 3, 13, 4)
       }
       ctx.globalAlpha = 1
+    }
+
+    // 시작 지점(월드 y=0) 아래는 땅 — normal 발판과 같은 팔레트를 써서 같은 재질로
+    // 보이게 한다. 같은 좌표 변환을 쓰므로 카메라가 올라가 화면 밖으로 나가면
+    // (worldGroundY >= LOGICAL_H) 별도 처리 없이 자연히 그려지지 않는다.
+    // 별·구름 뒤가 아니라 맨 마지막에 그린다 — 땅은 불투명한 전경이므로 별·구름이
+    // 그 위(화면상 앞)에 겹쳐 보이면 안 된다.
+    const worldGroundY = Math.round(C.LOGICAL_H - (0 - state.camera.y))
+    if (worldGroundY < C.LOGICAL_H) {
+      const groundPalette = PLATFORM_PALETTES.normal
+      const grassH = 2
+      const grassY = Math.max(0, worldGroundY)
+      ctx.fillStyle = groundPalette['g']!
+      ctx.fillRect(0, grassY, C.LOGICAL_W, Math.min(grassH, C.LOGICAL_H - grassY))
+
+      const dirtY = Math.max(0, worldGroundY + grassH)
+      if (dirtY < C.LOGICAL_H) {
+        ctx.fillStyle = groundPalette['d']!
+        ctx.fillRect(0, dirtY, C.LOGICAL_W, C.LOGICAL_H - dirtY)
+      }
     }
   }
 
