@@ -6,12 +6,20 @@
    summaries, spec tables, FAQ accordions, radio options, search
    pills, ...) is commerce furniture this game has no use for.
 
-   None of these classes are applied to any element yet — Task 1
-   restyles the existing DOM in place via styles.css. These recipes
-   are staged here for later tasks that rewrite screen markup.
+   .btn, .button-primary, .button-secondary, .button-pill-tab, .badge,
+   and .promo-banner are all in active use across the shell/lobby/
+   wardrobe/shop/records/result/quiz screens.
    ───────────────────────────────────────────────────────────── */
 
 /* ── BUTTONS ─────────────────────────────────────────────────── */
+/* Three pairs below resolve correctly only because of source order — all
+   same specificity, so whichever rule appears later in this file wins:
+     .btn { border: none }        vs .button-secondary's border
+     .button-pill-tab             vs .button-pill-tab-active
+     .btn:active { transform }    vs .button-*-disabled:active { transform: none }
+   Reordering this file can silently strip outlined buttons of their
+   outline, or make disabled buttons press again. Keep declaration order
+   intact, or make the later rule's specificity explicit if you must move it. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -36,8 +44,7 @@
   color: var(--color-on-ink-button);
   padding: 14px 30px;
 }
-.button-primary:active,
-.button-primary-pressed { background: var(--color-charcoal); }
+.button-primary:active { background: var(--color-charcoal); }
 .button-primary-disabled {
   background: var(--color-disabled-text);
   color: var(--color-on-ink-button);
@@ -59,14 +66,6 @@
 }
 .button-secondary-disabled:active { transform: none; }
 
-/* Ghost — quieter outline */
-.button-ghost {
-  background: transparent;
-  color: var(--color-ink-deep);
-  border: 2px solid var(--border-translucent);
-  padding: 10px 22px;
-}
-
 /* Pill tab category nav */
 .button-pill-tab {
   background: var(--color-canvas);
@@ -84,14 +83,6 @@
   background: var(--color-ink-deep);
   color: var(--color-canvas);
   border-color: transparent;
-}
-
-/* ── CARDS ───────────────────────────────────────────────────── */
-.card-icon-feature {
-  background: var(--color-canvas);
-  border-radius: var(--radius-xl);
-  padding: var(--space-xl);
-  border: 1px solid var(--color-hairline-soft);
 }
 
 /* ── BADGES & STATUS ─────────────────────────────────────────── */

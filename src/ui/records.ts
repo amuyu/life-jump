@@ -99,6 +99,12 @@ function renderChart(mount: HTMLElement, save: SaveData): void {
     col.appendChild(label)
 
     const bar = document.createElement('div')
+    // 정확히 같은 값만 최고기록으로 강조한다 — 일부러다. 동률이면 여러 막대가
+    // 함께 강조될 수 있지만, 그건 정직한 결과다(정말 동률이니까). 위의
+    // records-best-card가 어차피 진짜 전체 최고기록을 항상 보여주므로, 이
+    // 막대 강조가 틀릴 일은 없다. 다만 신규 플레이어라 bestHeight가 0이면
+    // recentRuns[0]도 0이라 이 최소 높이 스텁 막대가 "최고"로 강조되는데,
+    // 이 역시 사실과 다르지 않다 — 0m가 지금까지의 최고 기록이 맞다.
     const isBest = height === save.bestHeight
     bar.className = isBest ? 'records-bar records-bar-best' : 'records-bar'
     const pct = Math.max(4, Math.round((height / maxRun) * 100))
@@ -143,10 +149,13 @@ export function renderRecords(mount: HTMLElement, save: SaveData): void {
   statGrid.className = 'records-stat-grid'
 
   const upgradeSum = Object.values(save.upgrades).reduce((sum, v) => sum + v, 0)
+  // 다른 모든 px→m 표시(metersOf, lobby.ts, result.ts)는 floor를 쓴다 — 여기도
+  // 맞춰야 12,845px 평균이 옆의 12,845px 한 판 기록과 다른 숫자(1285m vs
+  // 1284m)로 보이는 일이 없다. PX_PER_M로는 정확히 한 번만 나눈다.
   const avgLabel = save.recentRuns.length === 0
     ? '–'
-    : `${Math.round(
-        save.recentRuns.reduce((sum, v) => sum + v, 0) / save.recentRuns.length / C.PX_PER_M,
+    : `${metersOf(
+        save.recentRuns.reduce((sum, v) => sum + v, 0) / save.recentRuns.length,
       )}m`
 
   statGrid.appendChild(statTile(`${save.totalRuns}회`, '기록된 플레이'))

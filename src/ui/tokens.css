@@ -48,7 +48,6 @@
   /* ── Colours — button surfaces (trimmed) ───────────────────── */
   --color-ink-button: #000000;
   --color-on-ink-button: #ffffff;
-  --color-on-primary: #ffffff;
   --color-disabled-text: #c9ced3;
 
   /* ── Colours — overlays (trimmed) ───────────────────────────── */
@@ -56,17 +55,18 @@
 
   /* ── Colours — semantic aliases (role-based, trimmed) ──────────
      The one real cross-file coupling: components.css consumes these,
-     and so does this project's own styles.css. */
+     and so does this project's own styles.css. --surface-page and
+     --border-default were dropped from this block (along with
+     --color-on-primary above) — neither components.css nor styles.css
+     ever referenced them. */
   --text-primary: var(--color-ink-deep);
   --text-body: var(--color-ink);
   --text-muted: var(--color-steel);
   --text-disabled: var(--color-stone);
 
-  --surface-page: var(--color-canvas);
   --surface-card: var(--color-canvas);
   --surface-soft: var(--color-surface-soft);
 
-  --border-default: var(--color-hairline);
   --border-soft: var(--color-hairline-soft);
 
   /* ── Spacing — 4px base, 8px dominant step (full, untrimmed) ─── */
