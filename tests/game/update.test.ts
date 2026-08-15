@@ -187,6 +187,14 @@ describe('stepGame — 장시간 시뮬레이션 (통합)', () => {
       const prevVy = s.player.vy
       stepGame(s, input, d)
 
+      // 아이템 드롭 중 1% 확률의 퀴즈를 주우면 paused=true가 되어 stepGame이
+      // 계속 조기 반환한다. 이 봇은 등반 불변식만 검증하므로 퀴즈 보상은
+      // 포기하고 즉시 닫아 계속 진행한다.
+      if (s.pendingQuiz !== null) {
+        s.pendingQuiz = null
+        s.paused = false
+      }
+
       // 새 탄도 구간이 시작됐을 때만(자체 점프 또는 스프링 튕김으로 vy가
       // 증가했을 때) 목표를 다시 고른다. 그 사이에는 같은 목표를 향해
       // 끝까지 조향한다.
