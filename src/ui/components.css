@@ -52,6 +52,12 @@
   border: 2px solid var(--color-ink-deep);
   padding: 12px 28px;
 }
+.button-secondary-disabled {
+  color: var(--text-disabled);
+  border-color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.button-secondary-disabled:active { transform: none; }
 
 /* Ghost — quieter outline */
 .button-ghost {

@@ -208,4 +208,19 @@ describe('판 종료 결산', () => {
     // 가장 오래된 값이 앞, 최신 값이 뒤 — 마지막 판(가장 큰 높이)이 배열 끝에 있다
     expect(save.recentRuns[save.recentRuns.length - 1]).toBe(100 * (RECENT_RUNS_MAX + 5))
   })
+
+  // 위 테스트는 매 판마다 loadSave로 다시 읽어들이는데, numArray(storage.ts)가
+  // 로드 시점에 이미 RECENT_RUNS_MAX로 잘라주기 때문에 finishRun 자신의
+  // .slice(-RECENT_RUNS_MAX)가 지워져도 이 테스트는 통과해 버린다 — 즉 이 케이스
+  // 하나만으로는 finishRun의 상한 로직 자체를 검증하지 못한다. main.ts는 세션
+  // 내내 save 객체 하나를 메모리에 들고 재로드 없이 계속 쓰므로, finishRun만을
+  // 여러 판 연속 호출해 상한이 지켜지는지 별도로 확인한다.
+  it('reload 없이 finishRun만 반복해도 recentRuns는 RECENT_RUNS_MAX를 넘지 않는다', () => {
+    const save = defaultSave()
+    for (let i = 0; i < RECENT_RUNS_MAX + 5; i++) {
+      finishRun(save, makeRun({ maxHeight: 100 * (i + 1), thread: 0, coins: 0 }))
+    }
+    expect(save.recentRuns).toHaveLength(RECENT_RUNS_MAX)
+    expect(save.recentRuns[save.recentRuns.length - 1]).toBe(100 * (RECENT_RUNS_MAX + 5))
+  })
 })

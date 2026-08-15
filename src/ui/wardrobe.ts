@@ -35,7 +35,10 @@ function actionButton(
 ): HTMLButtonElement {
   const button = document.createElement('button')
   const classes = ['btn', `button-${variant}`]
+  // primary/secondary 각각 짝이 되는 -disabled 클래스를 붙인다 — 붙이지 않으면
+  // (components.css) disabled 버튼이 살아있는 버튼과 픽셀 단위로 똑같아 보인다.
   if (disabled && variant === 'primary') classes.push('button-primary-disabled')
+  if (disabled && variant === 'secondary') classes.push('button-secondary-disabled')
   button.className = classes.join(' ')
   button.textContent = label
   button.disabled = disabled
