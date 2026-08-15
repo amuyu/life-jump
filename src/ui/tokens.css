@@ -1,0 +1,173 @@
+/* ─────────────────────────────────────────────────────────────
+   DESIGN TOKENS — vendored from the Meta Commerce design system
+   (tokens/colors.css, spacing.css, shapes.css, elevation.css,
+   typography.css), merged into one file.
+
+   Only the colour palette was hand-trimmed: ~25 variables this game
+   never references were dropped (--color-fb-blue, --color-meta-link,
+   --color-oculus-purple, the critical/error set, the marketing CTA
+   aliases, etc). spacing/shapes/elevation/typography are carried
+   over in full — they're already small and layout-only.
+
+   fonts.css was NOT vendored: it @imports Google Fonts at runtime and
+   its own header states the face is "NOT publicly licensed". This
+   project ships with zero runtime dependencies and no external
+   network requests, so --font-display/--font-body are defined here
+   directly with a system stack instead.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Fonts (system stack, no external request) ────────────────
+     Noto Sans KR covers Korean if the user has it installed; if not,
+     the stack falls through to the next system font. Never @import'd. */
+  --font-display: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  --font-technical: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-feature-headings: normal; /* ss01/ss02 don't exist in system fonts */
+
+  /* ── Colours — brand & accent (trimmed) ────────────────────── */
+  --color-primary: #0064e0;         /* Cobalt — primary action */
+
+  /* ── Colours — surface (trimmed) ───────────────────────────── */
+  --color-canvas: #ffffff;
+  --color-surface-soft: #f1f4f6;
+  --color-hairline: #c9ced3;
+  --color-hairline-soft: #e4e6eb;
+
+  /* ── Colours — text (trimmed) ───────────────────────────────── */
+  --color-ink-deep: #0a1317;
+  --color-ink: #1c2b33;
+  --color-charcoal: #344854;
+  --color-steel: #627885;
+  --color-stone: #94a3ad;
+
+  /* ── Colours — semantic (trimmed) ──────────────────────────── */
+  --color-success: #1b8e3a;
+  --color-warning: #f7c948;
+
+  /* ── Colours — button surfaces (trimmed) ───────────────────── */
+  --color-ink-button: #000000;
+  --color-on-ink-button: #ffffff;
+  --color-on-primary: #ffffff;
+  --color-disabled-text: #c9ced3;
+
+  /* ── Colours — overlays (trimmed) ───────────────────────────── */
+  --border-translucent: rgba(10, 19, 23, 0.12);
+
+  /* ── Colours — semantic aliases (role-based, trimmed) ──────────
+     The one real cross-file coupling: components.css consumes these,
+     and so does this project's own styles.css. */
+  --text-primary: var(--color-ink-deep);
+  --text-body: var(--color-ink);
+  --text-muted: var(--color-steel);
+  --text-disabled: var(--color-stone);
+
+  --surface-page: var(--color-canvas);
+  --surface-card: var(--color-canvas);
+  --surface-soft: var(--color-surface-soft);
+
+  --border-default: var(--color-hairline);
+  --border-soft: var(--color-hairline-soft);
+
+  /* ── Spacing — 4px base, 8px dominant step (full, untrimmed) ─── */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 10px;
+  --space-md: 12px;
+  --space-base: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-xxxl: 40px;
+  --space-section-sm: 48px;
+  --space-section: 64px;
+  --space-section-lg: 80px;
+  --space-hero: 120px;
+  --container-max: 1280px;
+  --rail-max: 380px;
+  --gutter: 32px;
+
+  /* ── Shapes — border-radius scale (full, untrimmed) ──────────── */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 16px;
+  --radius-xxl: 24px;
+  --radius-xxxl: 32px;
+  --radius-feature: 40px;
+  --radius-full: 100px;
+  --radius-circle: 50%;
+
+  /* ── Elevation (full, untrimmed) ───────────────────────────── */
+  --elevation-0: none;
+  --elevation-1: rgba(0, 0, 0, 0.2) 1px 1px 0px 0px;
+  --elevation-2: rgba(20, 22, 26, 0.3) 0px 1px 4px 0px;
+  --motion-surface: 200ms cubic-bezier(0.2, 0, 0, 1);
+  --motion-accordion: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Typography — role tokens (full, untrimmed) ───────────────
+     size / weight / line-height / tracking together. */
+  --type-hero-display-size: 64px;
+  --type-hero-display-weight: 500;
+  --type-hero-display-lh: 1.16;
+  --type-hero-display-ls: 0;
+
+  --type-display-lg-size: 48px;
+  --type-display-lg-weight: 500;
+  --type-display-lg-lh: 1.17;
+  --type-display-lg-ls: 0;
+
+  --type-heading-lg-size: 36px;
+  --type-heading-lg-weight: 500;
+  --type-heading-lg-lh: 1.28;
+  --type-heading-lg-ls: 0;
+
+  --type-heading-md-size: 28px;
+  --type-heading-md-weight: 300;
+  --type-heading-md-lh: 1.21;
+  --type-heading-md-ls: 0;
+
+  --type-heading-sm-size: 24px;
+  --type-heading-sm-weight: 500;
+  --type-heading-sm-lh: 1.25;
+  --type-heading-sm-ls: 0;
+
+  --type-subtitle-lg-size: 18px;
+  --type-subtitle-lg-weight: 700;
+  --type-subtitle-lg-lh: 1.44;
+  --type-subtitle-lg-ls: 0;
+
+  --type-subtitle-md-size: 18px;
+  --type-subtitle-md-weight: 400;
+  --type-subtitle-md-lh: 1.44;
+  --type-subtitle-md-ls: 0;
+
+  --type-body-md-size: 16px;
+  --type-body-md-weight: 400;
+  --type-body-md-lh: 1.50;
+  --type-body-md-ls: -0.16px;
+  --type-body-md-bold-weight: 700;
+
+  --type-body-sm-size: 14px;
+  --type-body-sm-weight: 400;
+  --type-body-sm-lh: 1.43;
+  --type-body-sm-ls: -0.14px;
+  --type-body-sm-bold-weight: 700;
+
+  --type-caption-size: 12px;
+  --type-caption-weight: 400;
+  --type-caption-lh: 1.33;
+  --type-caption-ls: 0;
+  --type-caption-bold-weight: 700;
+
+  --type-button-md-size: 14px;
+  --type-button-md-weight: 700;
+  --type-button-md-lh: 1.43;
+  --type-button-md-ls: -0.14px;
+
+  --type-link-md-size: 16px;
+  --type-link-md-weight: 700;
+  --type-link-md-lh: 1.50;
+  --type-link-md-ls: -0.16px;
+}

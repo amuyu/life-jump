@@ -1,0 +1,116 @@
+/* ─────────────────────────────────────────────────────────────
+   COMPONENT RECIPES — hand-picked from the Meta Commerce design
+   system's components/components.css. Only six recipes were kept:
+   the button variants, the pill tab, the badge, the promo banner,
+   and one card. Everything else in the source file (checkout
+   summaries, spec tables, FAQ accordions, radio options, search
+   pills, ...) is commerce furniture this game has no use for.
+
+   None of these classes are applied to any element yet — Task 1
+   restyles the existing DOM in place via styles.css. These recipes
+   are staged here for later tasks that rewrite screen markup.
+   ───────────────────────────────────────────────────────────── */
+
+/* ── BUTTONS ─────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--type-button-md-size);
+  font-weight: var(--type-button-md-weight);
+  line-height: var(--type-button-md-lh);
+  letter-spacing: var(--type-button-md-ls);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  transition: background var(--motion-surface), color var(--motion-surface), border-color var(--motion-surface), transform var(--motion-surface);
+}
+.btn:active { transform: scale(0.98); }
+
+/* Marketing primary — black pill */
+.button-primary {
+  background: var(--color-ink-button);
+  color: var(--color-on-ink-button);
+  padding: 14px 30px;
+}
+.button-primary:active,
+.button-primary-pressed { background: var(--color-charcoal); }
+.button-primary-disabled {
+  background: var(--color-disabled-text);
+  color: var(--color-on-ink-button);
+  cursor: not-allowed;
+}
+.button-primary-disabled:active { transform: none; }
+
+/* Secondary — outlined ghost */
+.button-secondary {
+  background: transparent;
+  color: var(--color-ink-deep);
+  border: 2px solid var(--color-ink-deep);
+  padding: 12px 28px;
+}
+
+/* Ghost — quieter outline */
+.button-ghost {
+  background: transparent;
+  color: var(--color-ink-deep);
+  border: 2px solid var(--border-translucent);
+  padding: 10px 22px;
+}
+
+/* Pill tab category nav */
+.button-pill-tab {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: var(--type-body-sm-size);
+  font-weight: 700;
+  letter-spacing: -0.14px;
+  cursor: pointer;
+}
+.button-pill-tab-active {
+  background: var(--color-ink-deep);
+  color: var(--color-canvas);
+  border-color: transparent;
+}
+
+/* ── CARDS ───────────────────────────────────────────────────── */
+.card-icon-feature {
+  background: var(--color-canvas);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  border: 1px solid var(--color-hairline-soft);
+}
+
+/* ── BADGES & STATUS ─────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-caption-bold-weight);
+  line-height: var(--type-caption-lh);
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
+}
+.badge-success { background: var(--color-success); color: var(--color-canvas); }
+
+.promo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  background: var(--color-ink-deep);
+  color: var(--color-canvas);
+  font-size: var(--type-body-sm-size);
+  font-weight: 700;
+  letter-spacing: -0.14px;
+  padding: var(--space-md) var(--space-xl);
+}
+.promo-banner a { color: inherit; text-decoration: underline; }

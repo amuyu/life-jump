@@ -1,0 +1,127 @@
+/* ─────────────────────────────────────────────────────────────
+   TYPOGRAPHY UTILITIES — vendored near-verbatim from the Meta
+   Commerce design system's tokens/typography.utilities.css. One
+   class applies a full type role (family, size, weight, line-height,
+   tracking). Pure CSS — no JS bundle required.
+
+   Two classes the design's own template references don't exist in
+   this file (a bug in the source design, documented there):
+   `type-display-md` and `type-button-sm`. When a later task needs
+   them, use `type-display-lg` and `type-button-md` instead — do not
+   add the missing classes here.
+   ───────────────────────────────────────────────────────────── */
+
+.type-hero-display,
+.type-display-lg,
+.type-heading-lg,
+.type-heading-md,
+.type-heading-sm {
+  font-family: var(--font-display);
+  font-feature-settings: var(--font-feature-headings);
+  margin: 0;
+}
+
+.type-subtitle-lg,
+.type-subtitle-md,
+.type-body-md,
+.type-body-md-bold,
+.type-body-sm,
+.type-body-sm-bold,
+.type-caption,
+.type-caption-bold,
+.type-button-md,
+.type-link-md {
+  font-family: var(--font-body);
+  margin: 0;
+}
+
+.type-hero-display {
+  font-size: var(--type-hero-display-size);
+  font-weight: var(--type-hero-display-weight);
+  line-height: var(--type-hero-display-lh);
+  letter-spacing: var(--type-hero-display-ls);
+}
+.type-display-lg {
+  font-size: var(--type-display-lg-size);
+  font-weight: var(--type-display-lg-weight);
+  line-height: var(--type-display-lg-lh);
+  letter-spacing: var(--type-display-lg-ls);
+}
+.type-heading-lg {
+  font-size: var(--type-heading-lg-size);
+  font-weight: var(--type-heading-lg-weight);
+  line-height: var(--type-heading-lg-lh);
+  letter-spacing: var(--type-heading-lg-ls);
+}
+.type-heading-md {
+  font-size: var(--type-heading-md-size);
+  font-weight: var(--type-heading-md-weight);
+  line-height: var(--type-heading-md-lh);
+  letter-spacing: var(--type-heading-md-ls);
+}
+.type-heading-sm {
+  font-size: var(--type-heading-sm-size);
+  font-weight: var(--type-heading-sm-weight);
+  line-height: var(--type-heading-sm-lh);
+  letter-spacing: var(--type-heading-sm-ls);
+}
+
+.type-subtitle-lg {
+  font-size: var(--type-subtitle-lg-size);
+  font-weight: var(--type-subtitle-lg-weight);
+  line-height: var(--type-subtitle-lg-lh);
+}
+.type-subtitle-md {
+  font-size: var(--type-subtitle-md-size);
+  font-weight: var(--type-subtitle-md-weight);
+  line-height: var(--type-subtitle-md-lh);
+}
+
+.type-body-md {
+  font-size: var(--type-body-md-size);
+  font-weight: var(--type-body-md-weight);
+  line-height: var(--type-body-md-lh);
+  letter-spacing: var(--type-body-md-ls);
+}
+.type-body-md-bold {
+  font-size: var(--type-body-md-size);
+  font-weight: var(--type-body-md-bold-weight);
+  line-height: var(--type-body-md-lh);
+  letter-spacing: var(--type-body-md-ls);
+}
+.type-body-sm {
+  font-size: var(--type-body-sm-size);
+  font-weight: var(--type-body-sm-weight);
+  line-height: var(--type-body-sm-lh);
+  letter-spacing: var(--type-body-sm-ls);
+}
+.type-body-sm-bold {
+  font-size: var(--type-body-sm-size);
+  font-weight: var(--type-body-sm-bold-weight);
+  line-height: var(--type-body-sm-lh);
+  letter-spacing: var(--type-body-sm-ls);
+}
+
+.type-caption {
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-caption-weight);
+  line-height: var(--type-caption-lh);
+}
+.type-caption-bold {
+  font-size: var(--type-caption-size);
+  font-weight: var(--type-caption-bold-weight);
+  line-height: var(--type-caption-lh);
+}
+
+.type-button-md {
+  font-size: var(--type-button-md-size);
+  font-weight: var(--type-button-md-weight);
+  line-height: var(--type-button-md-lh);
+  letter-spacing: var(--type-button-md-ls);
+}
+.type-link-md {
+  font-size: var(--type-link-md-size);
+  font-weight: var(--type-link-md-weight);
+  line-height: var(--type-link-md-lh);
+  letter-spacing: var(--type-link-md-ls);
+}
