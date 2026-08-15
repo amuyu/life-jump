@@ -47,6 +47,12 @@ export function stepMotion(state: GameState, input: InputState, dt: number): voi
  * 이번 스텝에 착지한 발판을 돌려준다. 착지했으면 player.y/vy/onGround를 갱신한다.
  * 착지하지 않았으면 null.
  *
+ * onGround는 여기서 양방향으로 결정된다. 발판 위에 서 있는 동안에도 중력이
+ * 매 스텝 발바닥을 상단선 아래로 밀어내므로 매 스텝 다시 착지 판정을 통과한다.
+ * 따라서 "하강 중인데 이번 스텝에 아무 발판도 가로지르지 않았다"는 곧
+ * **발판 끝에서 걸어 나갔다**는 뜻이며, 그 순간 onGround를 내려야 한다.
+ * 내리지 않으면 낙하 내내 지상 점프(그리고 더블 점프 재충전)가 가능해진다.
+ *
  * 단순 사각형 겹침 검사가 아니라 prevY..y 구간이 발판 상단선을 가로질렀는지
  * 검사한다 — 최대 낙하 속도(600px/s)는 프레임당 10px 이동인데 발판은 6px
  * 두께라서, 겹침 검사만으로는 고속 낙하 시 발판을 관통해버린다.
@@ -74,7 +80,11 @@ export function resolveLanding(state: GameState): Platform | null {
     if (best === null || plat.y > best.y) best = plat
   }
 
-  if (best === null) return null
+  if (best === null) {
+    // 하강 중인데 밟은 것이 없다 — 발판 끝을 벗어났다
+    p.onGround = false
+    return null
+  }
 
   p.y = best.y
   p.prevY = best.y

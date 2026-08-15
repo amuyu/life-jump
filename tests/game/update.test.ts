@@ -76,6 +76,59 @@ describe('stepGame — 발판 상호작용', () => {
     expect(crumble.dead).toBe(true)
   })
 
+  it('발판 끝에서 걸어 나가면 onGround가 내려가고 지상 점프가 되지 않는다', () => {
+    // 회귀: onGround가 점프·스프링·발판 소멸에서만 내려가던 시절에는, 발판
+    // 끝에서 걸어 나가도 플래그가 참으로 남아 낙하 내내 지상 점프(그리고
+    // 더블 점프 재충전)가 공짜로 가능했다.
+    const s = createGameState(defaultModifiers())
+    const ledge = makePlatform(1, 60, 0, 24)
+    s.platforms = [ledge]
+    s.highestGeneratedY = 1e9      // 새 발판 생성을 막는다
+    s.player.x = 60                // 발판 왼쪽 끝 (발판 오른쪽 끝 = 84)
+    s.player.y = 0
+    s.player.prevY = 0
+    s.player.vy = 0
+    s.player.onGround = true
+    s.standingOnId = 1
+
+    // 오른쪽으로 걸어 발판 밖으로 나간다 (90px/s × 1/60초 = 스텝당 1.5px)
+    for (let i = 0; i < 20; i++) stepGame(s, inp({ right: true }), deps())
+
+    expect(s.player.onGround).toBe(false)
+    expect(s.standingOnId).toBeNull()
+    expect(s.player.vy).toBeLessThan(0)
+    expect(s.player.y).toBeLessThan(0)
+
+    // 낙하 중에 점프키를 눌러도 지상 점프가 나가지 않는다 — 계속 가속 낙하한다
+    const vyBefore = s.player.vy
+    stepGame(s, inp({ jumpPressed: true, jumpHeld: true }), deps())
+    expect(s.player.vy).toBeLessThan(vyBefore)
+    expect(s.player.onGround).toBe(false)
+  })
+
+  it('걸어 나간 뒤에는 이동 발판이 플레이어를 더 이상 실어 나르지 않는다', () => {
+    const s = createGameState(defaultModifiers())
+    const mv = makePlatform(1, 60, 0, 24, 'moving')
+    s.platforms = [mv]
+    s.highestGeneratedY = 1e9
+    s.player.x = 60
+    s.player.y = 0
+    s.player.prevY = 0
+    s.player.vy = 0
+    s.player.onGround = true
+    s.standingOnId = 1
+
+    for (let i = 0; i < 20; i++) stepGame(s, inp({ right: true }), deps())
+    expect(s.player.onGround).toBe(false)
+
+    // 발판만 움직이고 플레이어의 x는 그대로여야 한다
+    const platX = mv.x
+    const playerX = s.player.x
+    for (let i = 0; i < 5; i++) stepGame(s, NONE, deps())
+    expect(mv.x).not.toBeCloseTo(platX, 3)
+    expect(s.player.x).toBeCloseTo(playerX, 6)
+  })
+
   it('이동 발판 위에 선 플레이어가 함께 움직인다', () => {
     const s = createGameState(defaultModifiers())
     const mv = makePlatform(1, 60, 0, 60, 'moving')
