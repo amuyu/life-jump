@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { stepGame } from '../../src/game/update'
 import { createGameState, defaultModifiers, makePlatform } from '../../src/game/state'
+import type { GameState, Platform } from '../../src/game/state'
 import { createRng } from '../../src/core/rng'
 import type { InputState } from '../../src/core/input'
 import * as C from '../../src/constants'
@@ -128,20 +129,71 @@ describe('stepGame — 낙하와 부활', () => {
 })
 
 describe('stepGame — 장시간 시뮬레이션 (통합)', () => {
-  /** 항상 최대로 점프하며 올라가는 봇 */
+  /** player.y보다 높은 발판 중 가장 낮은 것 — 다음으로 밟아야 할 발판 */
+  function lowestPlatformAbove(s: GameState): Platform | null {
+    let best: Platform | null = null
+    for (const p of s.platforms) {
+      if (p.dead) continue
+      if (p.y <= s.player.y) continue
+      if (best === null || p.y < best.y) best = p
+    }
+    return best
+  }
+
+  /**
+   * 목표 발판을 향해 좌우로 조향하며 착지할 때마다(그리고 스프링에 튕길 때마다)
+   * 점프하는 봇. 도달 가능성 불변식(platforms.ts의 isReachable)이 실제 물리
+   * 시뮬레이션 하에서도 성립하는지 끝까지 검증하는 것이 목적이므로, 조향 없이
+   * 수직으로만 뛰는 봇으로는 부족하다 — 이동 발판 없이 수평 오프셋만 있는
+   * 발판은 절대 밟지 못해 정지 화면 폭 발판(시작 발판)에서 영원히 튕기기만
+   * 한다.
+   *
+   * 두 가지 함정을 피해야 한다:
+   *
+   * 1. 매 프레임 목표를 새로 고르면(가장 낮은 미달성 발판) 비행 중간에 목표가
+   *    계속 바뀌어 좌우 조향이 서로 상쇄되고 제자리를 맴돈다. 그래서 목표는
+   *    "탄도 구간 하나"당 한 번만 고른다 — 새 탄도가 시작될 때만(= 자체 점프
+   *    발동 또는 스프링 튕김으로 vy가 이전 프레임보다 커졌을 때) 갱신한다.
+   * 2. 점프를 스프링 착지 시점부터 30프레임처럼 고정 구간만 붙들면, 그 구간이
+   *    끝난 뒤 우연히 스프링을 밟을 때 physics.ts의 가변 점프 컷오프
+   *    (`!jumpHeld && vy > JUMP_CUTOFF`이면 vy를 300으로 자름)가 다음 프레임에
+   *    즉시 발동해 750짜리 스프링 반동을 300 근처로 깎아버린다. 착지
+   *    직후(onGround=true) 값은 스프링에서는 절대 true가 되지 않으므로(스프링은
+   *    착지 즉시 onGround=false로 튕겨 나가도록 설계돼 있다 — platforms.ts의
+   *    applyLandingEffect), 고정 프레임 카운터로는 이 컷오프를 피할 수 없다.
+   *    공중에 있는 동안은 계속 점프를 붙들고 있게 하면(실제 플레이어가 계속
+   *    점프를 누르고 있는 것과 같다) 이 문제가 사라진다.
+   */
   function autoPlay(seed: number, steps: number) {
     const s = createGameState(defaultModifiers())
     const d = deps(seed)
-    let jumpHeldFor = 0
+    let target: Platform | null = null
+    const DEAD_ZONE = 4 // 목표 중심에 이미 정렬돼 있을 때 좌우로 떨지 않기 위한 여유
 
     for (let i = 0; i < steps; i++) {
-      let input = inp({ jumpHeld: jumpHeldFor > 0 })
-      if (s.player.onGround) {
-        input = inp({ jumpPressed: true, jumpHeld: true })
-        jumpHeldFor = 30
+      let left = false
+      let right = false
+      if (target !== null) {
+        const targetCenterX = target.x + target.width / 2
+        const playerCenterX = s.player.x + C.PLAYER_W / 2
+        if (playerCenterX < targetCenterX - DEAD_ZONE) right = true
+        else if (playerCenterX > targetCenterX + DEAD_ZONE) left = true
       }
-      if (jumpHeldFor > 0) jumpHeldFor--
+
+      const input = s.player.onGround
+        ? inp({ left, right, jumpPressed: true, jumpHeld: true })
+        : inp({ left, right, jumpHeld: true })
+
+      const prevVy = s.player.vy
       stepGame(s, input, d)
+
+      // 새 탄도 구간이 시작됐을 때만(자체 점프 또는 스프링 튕김으로 vy가
+      // 증가했을 때) 목표를 다시 고른다. 그 사이에는 같은 목표를 향해
+      // 끝까지 조향한다.
+      if (target === null || target.dead || s.player.vy > prevVy) {
+        target = lowestPlatformAbove(s)
+      }
+
       if (s.run.over) break
     }
     return s
@@ -169,9 +221,15 @@ describe('stepGame — 장시간 시뮬레이션 (통합)', () => {
     expect(s.platforms.length).toBeLessThan(60)
   })
 
-  it('실제로 위로 올라간다', () => {
-    const s = autoPlay(4, 3000)
-    expect(s.run.maxHeight).toBeGreaterThan(200)
+  it('실제로 위로 올라간다 — 시드 1~6 모두 유의미하게 상승한다', () => {
+    // 시드 1과 6은 조향 없는 봇에서는 시작 발판 바로 위 스프링에 영원히
+    // 갇혀 92px(1회 최대 점프 높이)를 넘지 못했다. 조향하는 봇으로 두 시드
+    // 모두 실제로 등반이 가능한지 — platforms.ts의 도달 가능성 불변식이
+    // 물리 시뮬레이션 하에서도 성립하는지 — 확인한다.
+    for (let seed = 1; seed <= 6; seed++) {
+      const s = autoPlay(seed, 3000)
+      expect(s.run.maxHeight).toBeGreaterThan(300)
+    }
   })
 })
 
