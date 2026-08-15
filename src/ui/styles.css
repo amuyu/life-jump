@@ -206,7 +206,7 @@ canvas { image-rendering: pixelated; }
 /* Only the modal panels need to fit the viewport — the page itself scrolls
    normally now, so a second scrollbar on the panel would trap swipes/wheel
    input depending on where the pointer lands. Cap height on these two only. */
-.result-panel { width: 460px; max-width: calc(100vw - 48px); max-height: 90vh; overflow-y: auto; padding: var(--space-xxl); }
+.panel.result-panel { width: 460px; max-width: calc(100vw - 48px); max-height: 90vh; overflow-y: auto; padding: var(--space-xxl); }
 .result-tag { color: var(--text-muted); }
 .result-height { line-height: 1; margin-top: var(--space-xs); }
 .result-stats { display: flex; gap: var(--space-md); margin: var(--space-xl) 0; }
@@ -220,7 +220,7 @@ canvas { image-rendering: pixelated; }
 .result-actions .btn { flex: 1; }
 
 /* ── Quiz modal ────────────────────────────────────────────────── */
-.quiz-panel { width: 480px; max-width: calc(100vw - 48px); max-height: 90vh; overflow-y: auto; padding: var(--space-xxl); }
+.panel.quiz-panel { width: 480px; max-width: calc(100vw - 48px); max-height: 90vh; overflow-y: auto; padding: var(--space-xxl); }
 .quiz-title { margin-bottom: var(--space-md); }
 .quiz-timer-bar { height: 4px; background: var(--border-soft); border-radius: var(--radius-full); margin-bottom: var(--space-lg); overflow: hidden; }
 .quiz-timer-fill { height: 100%; width: 100%; background: var(--text-primary); }

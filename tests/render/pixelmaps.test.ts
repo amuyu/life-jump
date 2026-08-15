@@ -6,6 +6,7 @@ import {
   ICON_MAPS, ICON_PALETTES, mapSize,
 } from '../../src/data/pixelmaps'
 import * as C from '../../src/constants'
+import { OUTFITS } from '../../src/data/outfits'
 
 const ALL_MAPS: Array<[string, readonly string[]]> = [
   ['PLAYER_IDLE', PLAYER_IDLE],
@@ -51,10 +52,24 @@ describe('픽셀맵 정합성', () => {
   // ','·'='·':'가 들어가면 서로 다른 두 스프라이트가 같은 키로 충돌해
   // 엉뚱한 스프라이트가 캐시에서 튀어나올 수 있다 — 지금 데이터는 안전하지만
   // 그 전제를 여기서 고정해 둔다.
+  //
+  // bakeKey는 ALL_MAPS/ALL_PALETTES(pixelmaps.ts)뿐 아니라 OUTFITS(outfits.ts)의
+  // palette/overlay.palette/overlay.map도 outfitCanvas(spritePreview.ts)를 통해
+  // 받는다 — 실제로는 이쪽이 더 흔한 호출 경로다(옷장·상점 프리뷰). 그래서
+  // OUTFITS도 같은 전제로 고정한다.
   it('맵 행에 bakeKey 구분자(|)가 없다', () => {
     for (const [name, map] of ALL_MAPS) {
       for (let i = 0; i < map.length; i++) {
         expect(map[i]!.includes('|'), `${name} 행 ${i}`).toBe(false)
+      }
+    }
+    for (const outfit of OUTFITS) {
+      if (outfit.overlay === null) continue
+      for (let i = 0; i < outfit.overlay.map.length; i++) {
+        expect(
+          outfit.overlay.map[i]!.includes('|'),
+          `OUTFITS['${outfit.id}'].overlay.map 행 ${i}`,
+        ).toBe(false)
       }
     }
   })
@@ -63,6 +78,21 @@ describe('픽셀맵 정합성', () => {
     for (const [name, palette] of ALL_PALETTES) {
       for (const [ch, color] of Object.entries(palette)) {
         const label = `${name}['${ch}']`
+        expect(color.includes(','), label).toBe(false)
+        expect(color.includes('='), label).toBe(false)
+        expect(color.includes(':'), label).toBe(false)
+      }
+    }
+    for (const outfit of OUTFITS) {
+      for (const [ch, color] of Object.entries(outfit.palette)) {
+        const label = `OUTFITS['${outfit.id}'].palette['${ch}']`
+        expect(color.includes(','), label).toBe(false)
+        expect(color.includes('='), label).toBe(false)
+        expect(color.includes(':'), label).toBe(false)
+      }
+      if (outfit.overlay === null) continue
+      for (const [ch, color] of Object.entries(outfit.overlay.palette)) {
+        const label = `OUTFITS['${outfit.id}'].overlay.palette['${ch}']`
         expect(color.includes(','), label).toBe(false)
         expect(color.includes('='), label).toBe(false)
         expect(color.includes(':'), label).toBe(false)

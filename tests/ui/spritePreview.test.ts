@@ -8,12 +8,15 @@ import { ITEM_MAPS, ITEM_PALETTES } from '../../src/data/pixelmaps'
 // environment: 'node'(이 프로젝트의 전역 vitest 설정)에서도 그대로 검증할 수 있다.
 describe('spriteCanvas — 정수 배율 가드', () => {
   it('정수가 아닌 배율은 던진다', () => {
-    expect(() => spriteCanvas(ITEM_MAPS.thread, ITEM_PALETTES.thread, 1.5)).toThrow()
+    expect(() => spriteCanvas(ITEM_MAPS.thread, ITEM_PALETTES.thread, 1.5))
+      .toThrow(/배율은 양의 정수만 허용된다/)
   })
 
   it('0 이하인 배율은 던진다', () => {
-    expect(() => spriteCanvas(ITEM_MAPS.thread, ITEM_PALETTES.thread, 0)).toThrow()
-    expect(() => spriteCanvas(ITEM_MAPS.thread, ITEM_PALETTES.thread, -2)).toThrow()
+    expect(() => spriteCanvas(ITEM_MAPS.thread, ITEM_PALETTES.thread, 0))
+      .toThrow(/배율은 양의 정수만 허용된다/)
+    expect(() => spriteCanvas(ITEM_MAPS.thread, ITEM_PALETTES.thread, -2))
+      .toThrow(/배율은 양의 정수만 허용된다/)
   })
 
   it('정수 배율은 가드의 throw까지 가지 않는다', () => {
