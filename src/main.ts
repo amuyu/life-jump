@@ -34,13 +34,16 @@ root.appendChild(uiLayer)
 const screen = createScreen(gameLayer)
 const loop = createLoop()
 const input = createInput()
-input.attach(window)
 
 let save: SaveData = loadSave({ outfits: OUTFIT_IDS, consumables: CONSUMABLE_IDS })
 const renderer = createRenderer(screen, save.equippedOutfit)
 let state: GameState | null = null
 let rng = createRng(Date.now() >>> 0)
 let quizOpen = false
+
+// 실제로 판을 플레이하는 동안에만 키를 가로챈다 — 로비·상점·퀴즈 모달에서는
+// Space로 버튼을 누르고 ArrowUp으로 패널을 스크롤할 수 있어야 한다
+input.attach(window, () => state !== null && !quizOpen)
 
 window.addEventListener('resize', () => fitScreen(screen))
 
