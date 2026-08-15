@@ -1,6 +1,7 @@
 import type { GameState, Platform, PlatformKind } from './state'
 import { makePlatform } from './state'
 import type { Rng } from '../core/rng'
+import { rollDrop } from './items'
 import * as C from '../constants'
 
 /** 두 발판의 수평 간격 (겹치면 0) */
@@ -106,6 +107,11 @@ export function generateUpTo(state: GameState, targetY: number, rng: Rng): void 
       plat.x += plat.x < safeX ? 1 : -1
       plat.movingOriginX = plat.x
     }
+
+    // 아이템 드랍 — 발판 자신의 y를 기준으로 굴린다 (스펙 3절 원칙)
+    const drop = rollDrop(y, rng)
+    plat.item = drop.kind
+    plat.itemAmount = drop.amount
 
     state.platforms.push(plat)
     state.highestGeneratedY = y

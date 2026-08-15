@@ -56,3 +56,7 @@ export const MOVING_RANGE = 20           // 중심에서 ±20px
 export const MOVING_SPEED = 25           // px/s
 export const PRUNE_MARGIN = 40           // 카메라 아래 이만큼 벗어나면 폐기
 export const GENERATE_AHEAD = LOGICAL_H  // 카메라 위로 한 화면 앞서 생성
+
+// 아이템
+export const ITEM_PICKUP_PAD = 6
+export const FOOD_TO_COIN = 3      // 에너지 가득일 때 음식이 주는 코인

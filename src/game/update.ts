@@ -8,6 +8,7 @@ import {
 } from './platforms'
 import { updateCamera, isBelowFallLine } from './camera'
 import { handleFall } from './survival'
+import { collectItems } from './items'
 import * as C from '../constants'
 
 export interface UpdateDeps {
@@ -47,6 +48,9 @@ export function stepGame(state: GameState, input: InputState, deps: UpdateDeps):
       state.standingOnId = null
     }
   }
+
+  collectItems(state)
+  if (state.paused) return    // 퀴즈가 떴다 — 이번 스텝은 여기서 끝낸다
 
   updateCamera(state)
 
