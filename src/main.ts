@@ -8,6 +8,7 @@ import { createRng } from './core/rng'
 import { loadSave, writeSave, type SaveData } from './core/storage'
 import { createGameState, type GameState } from './game/state'
 import { stepGame } from './game/update'
+import { grantFood } from './game/items'
 import { CONSUMABLE_IDS, UPGRADES, CONSUMABLES, nextUpgradePrice } from './data/shop'
 import { OUTFIT_IDS, outfitById, canCraft } from './data/outfits'
 import { pickQuestion, rewardFor } from './game/quiz'
@@ -169,7 +170,8 @@ function openQuiz(current: GameState): void {
       const reward = rewardFor(question.difficulty)
       if (result.reward === 'thread') current.run.thread += reward.thread
       else if (result.reward === 'coin') current.run.coins += reward.coin
-      else current.run.energy = Math.min(current.run.maxEnergy, current.run.energy + reward.food)
+      // 에너지가 가득이면 코인으로 — 아이템 경로와 같은 규칙을 쓴다
+      else grantFood(current.run, reward.food)
     }
 
     // 일시정지 규약 (스펙 8절) — 순서대로

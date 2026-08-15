@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { rollDrop, dropForRoll, collectItems } from '../../src/game/items'
+import { rollDrop, dropForRoll, collectItems, grantFood } from '../../src/game/items'
 import { createGameState, defaultModifiers, makePlatform } from '../../src/game/state'
 import { createRng } from '../../src/core/rng'
 import * as C from '../../src/constants'
@@ -104,6 +104,32 @@ function pickupScene(item: 'thread' | 'coin' | 'food' | 'quiz', amount = 1) {
   s.player.y = 200
   return s
 }
+
+describe('grantFood — 아이템과 퀴즈가 공유하는 음식 규칙', () => {
+  it('에너지가 남아 있으면 채운다', () => {
+    const s = createGameState(defaultModifiers())
+    s.run.energy = 1
+    grantFood(s.run, 1)
+    expect(s.run.energy).toBe(2)
+    expect(s.run.coins).toBe(0)
+  })
+
+  it('가득이면 코인으로 바뀐다 — 조용히 증발하지 않는다', () => {
+    const s = createGameState(defaultModifiers())
+    s.run.energy = s.run.maxEnergy
+    grantFood(s.run, 1)
+    expect(s.run.energy).toBe(s.run.maxEnergy)
+    expect(s.run.coins).toBe(C.FOOD_TO_COIN)
+  })
+
+  it('넘치는 만큼만 코인으로 바뀐다', () => {
+    const s = createGameState(defaultModifiers())
+    s.run.energy = s.run.maxEnergy - 1
+    grantFood(s.run, 3)
+    expect(s.run.energy).toBe(s.run.maxEnergy)
+    expect(s.run.coins).toBe(C.FOOD_TO_COIN * 2)
+  })
+})
 
 describe('collectItems', () => {
   it('실을 주우면 run.thread가 는다', () => {

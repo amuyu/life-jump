@@ -1,4 +1,4 @@
-import type { GameState, ItemKind } from './state'
+import type { GameState, ItemKind, RunState } from './state'
 import type { Rng } from '../core/rng'
 import * as C from '../constants'
 
@@ -32,6 +32,19 @@ export function rollDrop(platformY: number, rng: Rng): Drop {
   return { kind, amount: 1 }
 }
 
+/**
+ * 음식 보상을 지급한다 — 에너지가 가득이면 코인으로 바꾼다 (스펙 8절).
+ *
+ * 발판 아이템과 퀴즈 보상이 **같은 함수**를 쓴다. 두 곳에 규칙을 따로 쓰면
+ * 한쪽만 클램프해 보상이 조용히 증발한다 (실제로 퀴즈 쪽이 그랬다).
+ */
+export function grantFood(run: RunState, amount: number): void {
+  for (let i = 0; i < amount; i++) {
+    if (run.energy < run.maxEnergy) run.energy += 1
+    else run.coins += C.FOOD_TO_COIN
+  }
+}
+
 export function collectItems(state: GameState): void {
   const p = state.player
   const pad = C.ITEM_PICKUP_PAD + state.run.magnetRadius
@@ -63,11 +76,7 @@ export function collectItems(state: GameState): void {
     } else if (kind === 'coin') {
       state.run.coins += amount
     } else if (kind === 'food') {
-      if (state.run.energy < state.run.maxEnergy) {
-        state.run.energy += 1
-      } else {
-        state.run.coins += C.FOOD_TO_COIN
-      }
+      grantFood(state.run, 1)
     } else {
       // 물음표 — 게임을 멈추고 퀴즈를 예약한다
       state.pendingQuiz = { platformY: plat.y }
