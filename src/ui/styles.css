@@ -9,18 +9,15 @@ body {
   color: var(--text-body);
   font-family: var(--font-body);
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
 }
 
-#app { display: flex; align-items: center; justify-content: center; }
+#app { min-height: 100vh; }
 
 canvas { image-rendering: pixelated; }
 
 .panel {
   width: 320px;
+  max-width: calc(100vw - 32px);
   max-height: 90vh;
   overflow-y: auto;
   background: var(--surface-card);
@@ -62,7 +59,9 @@ canvas { image-rendering: pixelated; }
   position: fixed; inset: 0;
   background: rgba(10, 19, 23, 0.72);
   display: flex; align-items: center; justify-content: center;
-  z-index: 10;
+  /* .game-layer sits at z-index 20 as a fixed overlay while a run is in
+     progress; the quiz modal must still win over it. */
+  z-index: 30;
 }
 
 .timer-bar { height: 5px; background: var(--border-soft); border-radius: var(--radius-sm); margin-bottom: 12px; overflow: hidden; }
@@ -82,5 +81,65 @@ canvas { image-rendering: pixelated; }
 .panel button.primary, .modal-overlay button.primary { background: var(--color-success); }
 .panel button.wide + button.wide, .modal-overlay button.wide + button.wide { margin-top: 6px; }
 
-.game-layer { display: flex; align-items: center; justify-content: center; }
+/* Fixed overlay so the canvas keeps its own coordinate space (fitScreen
+   measures window.innerWidth/innerHeight, not this element) while the
+   page underneath is free to be a normal scrolling document. */
+.game-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-soft);
+}
 .hidden { display: none !important; }
+
+/* ── Shell chrome — wordmark, currency pills, tab bar ─────────── */
+.shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+.shell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-lg) var(--space-base);
+  border-bottom: 1px solid var(--border-soft);
+  flex-wrap: wrap;
+}
+
+.wordmark { display: flex; align-items: baseline; gap: var(--space-sm); }
+.wordmark-title {
+  font-family: var(--font-display);
+  font-size: var(--type-heading-sm-size);
+  font-weight: var(--type-heading-sm-weight);
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+.wordmark-sub { font-size: var(--type-caption-size); color: var(--text-muted); }
+
+.currency-pills { display: flex; align-items: center; gap: var(--space-xs); }
+.currency-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxs);
+  padding: 7px var(--space-base);
+  border-radius: var(--radius-full);
+  background: var(--surface-soft);
+  font-size: var(--type-body-sm-size);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tab-bar { display: flex; gap: var(--space-xs); padding: var(--space-base); flex-wrap: wrap; }
+
+.shell-body { flex: 1; display: flex; justify-content: center; padding: 0 var(--space-base) var(--space-xxl); }
+
+/* ── Mobile — zero media queries existed before this file; this is the
+   only breakpoint the shell needs: keep the tab bar wrapping and the
+   header stacked so nothing overflows a narrow viewport. ─────────── */
+@media (max-width: 480px) {
+  .shell-header { flex-direction: column; align-items: flex-start; }
+  .tab-bar { justify-content: center; padding: var(--space-sm) var(--space-xs); }
+  .stats { grid-template-columns: 1fr; }
+}

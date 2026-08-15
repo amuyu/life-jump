@@ -4,7 +4,6 @@ import { OUTFITS, canCraft } from '../data/outfits'
 export interface WardrobeCallbacks {
   onCraft(outfitId: string): void
   onEquip(outfitId: string): void
-  onClose(): void
 }
 
 export function renderWardrobe(
@@ -64,12 +63,6 @@ export function renderWardrobe(
   }
 
   panel.appendChild(list)
-
-  const close = document.createElement('button')
-  close.className = 'wide'
-  close.textContent = '돌아가기'
-  close.onclick = () => cb.onClose()
-  panel.appendChild(close)
 
   mount.appendChild(panel)
 }

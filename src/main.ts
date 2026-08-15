@@ -6,13 +6,14 @@ import { createLoop } from './core/loop'
 import { createInput } from './core/input'
 import { createRng } from './core/rng'
 import { loadSave, writeSave, CONSUMABLE_MAX, type SaveData } from './core/storage'
-import { createGameState, type GameState } from './game/state'
+import { createGameState, type GameState, type RunState } from './game/state'
 import { stepGame } from './game/update'
 import { grantFood } from './game/items'
 import { CONSUMABLE_IDS, UPGRADES, CONSUMABLES, nextUpgradePrice } from './data/shop'
 import { OUTFIT_IDS, outfitById, canCraft } from './data/outfits'
 import { pickQuestion, rewardFor } from './game/quiz'
 import { startRun as computeStartRun, finishRun as computeFinishRun } from './runFlow'
+import { renderShell, type Tab } from './ui/shell'
 import { renderLobby } from './ui/lobby'
 import { renderShop } from './ui/shop'
 import { renderWardrobe } from './ui/wardrobe'
@@ -42,6 +43,12 @@ let state: GameState | null = null
 let rng = createRng(Date.now() >>> 0)
 let quizOpen = false
 
+// 셸의 활성 탭. 로드아웃은 탭이 아니라 로비에서 진입하는 서브뷰라서
+// 별도 상태로 관리한다 — 탭을 벗어나지 않고도 로비 위에 겹쳐 그려진다.
+let tab: Tab = 'lobby'
+let showingLoadout = false
+let lastResult: { run: RunState; isNewBest: boolean } | null = null
+
 // 실제로 판을 플레이하는 동안에만 키를 가로챈다 — 로비·상점·퀴즈 모달에서는
 // Space로 버튼을 누르고 ArrowUp으로 패널을 스크롤할 수 있어야 한다
 input.attach(window, () => state !== null && !quizOpen)
@@ -58,80 +65,125 @@ document.addEventListener('visibilitychange', () => {
 
 const persist = (): void => { writeSave(save) }
 
-function showLobby(): void {
-  state = null
+function render(): void {
   gameLayer.classList.add('hidden')
-  renderLobby(uiLayer, save, {
-    onPlay: showLoadout,
-    onShop: showShop,
-    onWardrobe: showWardrobe,
+
+  // 결과 화면은 셸(탭바/재화) 없이 독립적으로 뜬다 — 기존 동작 유지
+  if (lastResult !== null) {
+    renderResult(uiLayer, lastResult.run, lastResult.isNewBest, {
+      onRetry: enterLoadout,
+      onLobby: goToLobby,
+    })
+    return
+  }
+
+  const body = renderShell(uiLayer, save, tab, {
+    onTab(next) {
+      tab = next
+      showingLoadout = false
+      render()
+    },
   })
+
+  if (showingLoadout) {
+    renderLoadout(body, save, {
+      onToggle(id) {
+        const at = save.selectedConsumables.indexOf(id)
+        if (at >= 0) {
+          save.selectedConsumables.splice(at, 1)
+        } else if (save.consumables[id as keyof typeof save.consumables] >= 1) {
+          save.selectedConsumables.push(id)
+        }
+        persist()
+        render()
+      },
+      onStart: startRun,
+      onClose: goToLobby,
+    })
+    return
+  }
+
+  switch (tab) {
+    case 'lobby':
+      renderLobby(body, save, {
+        onPlay: enterLoadout,
+        onShop() { tab = 'shop'; render() },
+        onWardrobe() { tab = 'wardrobe'; render() },
+      })
+      break
+    case 'shop':
+      renderShop(body, save, {
+        onBuyUpgrade(id) {
+          const upgrade = UPGRADES.find((u) => u.id === id)
+          if (upgrade === undefined) return
+          const level = save.upgrades[upgrade.id]
+          const price = nextUpgradePrice(upgrade, level)
+          if (price === null || save.coins < price) return
+          save.coins -= price
+          save.upgrades[upgrade.id] = level + 1
+          persist()
+          render()
+        },
+        onBuyConsumable(id) {
+          const item = CONSUMABLES.find((c) => c.id === id)
+          if (item === undefined || save.coins < item.price) return
+          // 로드 시 재고를 CONSUMABLE_MAX로 자르므로, 상한을 넘겨 사면 코인만
+          // 날리고 다음 로드에서 재고가 사라진다. 두 쪽이 같은 상수를 본다.
+          if (save.consumables[item.id] >= CONSUMABLE_MAX) return
+          save.coins -= item.price
+          save.consumables[item.id] += 1
+          persist()
+          render()
+        },
+      })
+      break
+    case 'wardrobe':
+      renderWardrobe(body, save, {
+        onCraft(id) {
+          const outfit = outfitById(id)
+          if (!canCraft(outfit, save.thread, save.ownedOutfits)) return
+          save.thread -= outfit.threadCost
+          save.ownedOutfits.push(outfit.id)
+          persist()
+          render()
+        },
+        onEquip(id) {
+          if (!save.ownedOutfits.includes(id)) return
+          save.equippedOutfit = id
+          renderer.setOutfit(id)
+          persist()
+          render()
+        },
+      })
+      break
+    case 'records':
+      renderRecordsPlaceholder(body)
+      break
+  }
 }
 
-function showShop(): void {
-  renderShop(uiLayer, save, {
-    onBuyUpgrade(id) {
-      const upgrade = UPGRADES.find((u) => u.id === id)
-      if (upgrade === undefined) return
-      const level = save.upgrades[upgrade.id]
-      const price = nextUpgradePrice(upgrade, level)
-      if (price === null || save.coins < price) return
-      save.coins -= price
-      save.upgrades[upgrade.id] = level + 1
-      persist()
-      showShop()
-    },
-    onBuyConsumable(id) {
-      const item = CONSUMABLES.find((c) => c.id === id)
-      if (item === undefined || save.coins < item.price) return
-      // 로드 시 재고를 CONSUMABLE_MAX로 자르므로, 상한을 넘겨 사면 코인만
-      // 날리고 다음 로드에서 재고가 사라진다. 두 쪽이 같은 상수를 본다.
-      if (save.consumables[item.id] >= CONSUMABLE_MAX) return
-      save.coins -= item.price
-      save.consumables[item.id] += 1
-      persist()
-      showShop()
-    },
-    onClose: showLobby,
-  })
+function renderRecordsPlaceholder(mount: HTMLElement): void {
+  mount.innerHTML = ''
+  const panel = document.createElement('div')
+  panel.className = 'panel'
+  panel.innerHTML = `
+    <div class="panel-header"><h2>기록</h2></div>
+    <p class="tagline">준비 중입니다.</p>`
+  mount.appendChild(panel)
 }
 
-function showWardrobe(): void {
-  renderWardrobe(uiLayer, save, {
-    onCraft(id) {
-      const outfit = outfitById(id)
-      if (!canCraft(outfit, save.thread, save.ownedOutfits)) return
-      save.thread -= outfit.threadCost
-      save.ownedOutfits.push(outfit.id)
-      persist()
-      showWardrobe()
-    },
-    onEquip(id) {
-      if (!save.ownedOutfits.includes(id)) return
-      save.equippedOutfit = id
-      renderer.setOutfit(id)
-      persist()
-      showWardrobe()
-    },
-    onClose: showLobby,
-  })
+function goToLobby(): void {
+  tab = 'lobby'
+  showingLoadout = false
+  lastResult = null
+  render()
 }
 
-function showLoadout(): void {
-  renderLoadout(uiLayer, save, {
-    onToggle(id) {
-      const at = save.selectedConsumables.indexOf(id)
-      if (at >= 0) {
-        save.selectedConsumables.splice(at, 1)
-      } else if (save.consumables[id as keyof typeof save.consumables] >= 1) {
-        save.selectedConsumables.push(id)
-      }
-      persist()
-      showLoadout()
-    },
-    onStart: startRun,
-    onClose: showLobby,
-  })
+function enterLoadout(): void {
+  tab = 'lobby'
+  showingLoadout = true
+  lastResult = null
+  render()
 }
 
 function startRun(): void {
@@ -157,7 +209,8 @@ function finishRun(run: GameState['run']): void {
 
   gameLayer.classList.add('hidden')
   state = null
-  renderResult(uiLayer, run, isNewBest, { onRetry: showLoadout, onLobby: showLobby })
+  lastResult = { run, isNewBest }
+  render()
 }
 
 function openQuiz(current: GameState): void {
@@ -218,5 +271,5 @@ function frame(now: number): void {
   requestAnimationFrame(frame)
 }
 
-showLobby()
+render()
 requestAnimationFrame(frame)

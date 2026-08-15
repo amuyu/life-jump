@@ -4,7 +4,6 @@ import { UPGRADES, CONSUMABLES, nextUpgradePrice } from '../data/shop'
 export interface ShopCallbacks {
   onBuyUpgrade(id: string): void
   onBuyConsumable(id: string): void
-  onClose(): void
 }
 
 export function renderShop(
@@ -77,12 +76,6 @@ export function renderShop(
     consumables.appendChild(row)
   }
   panel.appendChild(consumables)
-
-  const close = document.createElement('button')
-  close.className = 'wide'
-  close.textContent = '돌아가기'
-  close.onclick = () => cb.onClose()
-  panel.appendChild(close)
 
   mount.appendChild(panel)
 }
