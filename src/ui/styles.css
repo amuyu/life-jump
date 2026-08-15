@@ -28,7 +28,6 @@ canvas { image-rendering: pixelated; }
 
 .panel-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
 .panel-header h2 { font-size: var(--type-heading-sm-size); font-weight: var(--type-heading-sm-weight); color: var(--text-primary); }
-.currency { font-size: 13px; color: var(--color-warning); }
 
 .item-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 
@@ -40,16 +39,19 @@ canvas { image-rendering: pixelated; }
 .item-cost { font-size: 12px; color: var(--text-muted); }
 .item-desc { font-size: 11px; color: var(--text-disabled); width: 100%; }
 
-.swatch { width: 14px; height: 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-default); }
-
-.panel button, .modal-overlay button {
+/* Legacy Task-1 button rule. Scoped off .panel-wide (the class wardrobe/shop
+   opt into) so the rewritten screens fall through to the component-recipe
+   classes (btn button-primary, etc) in components.css. lobby.ts, loadout.ts,
+   and result.ts still use a bare .panel and haven't been rewritten yet — they
+   must keep computing to these values until Task 5. */
+.panel:not(.panel-wide) button, .modal-overlay button {
   padding: var(--space-xxs) var(--space-sm); font-size: var(--type-caption-size); border: 0; border-radius: var(--radius-sm);
   background: var(--color-primary); color: var(--color-on-primary); cursor: pointer;
 }
-.panel button:active, .modal-overlay button:active { transform: scale(0.98); }
-.panel button:disabled, .modal-overlay button:disabled { background: var(--color-disabled-text); color: var(--text-disabled); cursor: default; }
-.panel button.wide, .modal-overlay button.wide { width: 100%; padding: 9px; }
-.panel button.selected, .modal-overlay button.selected { background: var(--color-success); color: var(--color-on-primary); }
+.panel:not(.panel-wide) button:active, .modal-overlay button:active { transform: scale(0.98); }
+.panel:not(.panel-wide) button:disabled, .modal-overlay button:disabled { background: var(--color-disabled-text); color: var(--text-disabled); cursor: default; }
+.panel:not(.panel-wide) button.wide, .modal-overlay button.wide { width: 100%; padding: 9px; }
+.panel:not(.panel-wide) button.selected, .modal-overlay button.selected { background: var(--color-success); color: var(--color-on-primary); }
 
 .section { font-size: 13px; color: var(--text-muted); margin: 10px 0 6px; }
 .item-row small { color: var(--text-disabled); font-size: 11px; }
