@@ -35,9 +35,15 @@ describe('promoMessage', () => {
   })
 
   it('실이 비용보다 많으면, 이미 보유한 싼 옷들을 건너뛰고 다음으로 싼 미보유 옷을 고른다', () => {
-    // 소트 불변성: basic-tee/striped/raincoat/overalls를 이미 보유했으므로
-    // 다음 목표는 floral(35)이어야 한다 — "배열의 첫 미보유 항목"이 아니라
-    // "미보유 중 최소 비용"을 고르는 로직이어야 통과한다.
+    // 이 테스트가 실제로 고정하는 것: basic-tee/striped/raincoat/overalls를 이미
+    // 보유한 상태에서 다음 목표가 floral(35)로 넘어간다는 "건너뛰기" 동작이다.
+    //
+    // 주의 — 이 테스트만으로는 선택 로직이 "미보유 중 최소 비용"을 고르는지,
+    // 단순히 "배열의 첫 미보유 항목"을 고르는지 구별하지 못한다: OUTFITS가
+    // threadCost 오름차순으로 정렬되어 있어(tests/data/outfits.test.ts가 이를
+    // 고정한다) 이 데이터에서는 두 전략이 항상 같은 답을 낸다. 최소값 선택
+    // 로직(src/ui/shell.ts의 min-reduce)은 스스로 방어적으로 짠 것이고, 그 정렬
+    // 의존 여부를 이 테스트가 증명하지는 않는다.
     const save = makeSave({
       thread: 40,
       ownedOutfits: ['basic-tee', 'striped', 'raincoat', 'overalls'],

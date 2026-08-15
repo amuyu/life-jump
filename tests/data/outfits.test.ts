@@ -17,9 +17,21 @@ describe('OUTFITS', () => {
     expect(OUTFITS[0]!.threadCost).toBe(0)
   })
 
-  it('실 비용이 오름차순이다', () => {
+  it('실 비용이 오름차순이다 — 이 정렬이 깨지면 안 되는 두 소비처가 있다', () => {
+    // 1) src/ui/shell.ts의 promoMessage()는 "미보유 중 최저가"를 직접 min-reduce로
+    //    고르므로 이 정렬 자체엔 기술적으로 의존하지 않지만, 그 로직을 검증하는
+    //    tests/ui/shell.test.ts의 "건너뛰기" 테스트는 OUTFITS가 비용 오름차순이라는
+    //    전제 위에서만 최저가 선택과 "배열의 첫 미보유 항목" 선택을 구별하지 못한다
+    //    (둘이 같은 답을 낸다) — 즉 그 테스트의 유효성이 이 정렬에 기대어 있다.
+    // 2) 옷장 화면(src/ui/wardrobe.ts)은 이 배열을 순서 그대로 그려 가격순 그리드를
+    //    기대한다 — 순서가 깨지면 화면도 가격순이 아니게 된다.
     for (let i = 1; i < OUTFITS.length; i++) {
-      expect(OUTFITS[i]!.threadCost).toBeGreaterThan(OUTFITS[i - 1]!.threadCost)
+      expect(
+        OUTFITS[i]!.threadCost,
+        `${OUTFITS[i]!.id}(${OUTFITS[i]!.threadCost}실)이 ` +
+          `${OUTFITS[i - 1]!.id}(${OUTFITS[i - 1]!.threadCost}실)보다 비싸야 한다 — ` +
+          `OUTFITS는 threadCost 오름차순으로 유지되어야 한다.`,
+      ).toBeGreaterThan(OUTFITS[i - 1]!.threadCost)
     }
   })
 
