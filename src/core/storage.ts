@@ -1,6 +1,9 @@
 export const SAVE_KEY = 'life-jump-save-v1'
-export const SAVE_VERSION = 1
+export const SAVE_VERSION = 2
 export const DEFAULT_OUTFIT_ID = 'basic-tee'
+
+/** 최근 플레이 차트의 막대 개수와 같아야 한다. */
+export const RECENT_RUNS_MAX = 8
 
 /**
  * 소모품 재고 상한. 로드 시 클램프하는 값과 구매 시 막는 값이 같아야 한다 —
@@ -28,6 +31,8 @@ export interface SaveData {
   consumables: { rocket: number; feather: number; cushion: number; doubleJump: number }
   selectedConsumables: string[]
   seenQuizIds: string[]
+  /** 최근 판의 maxHeight (px), 오래된 것이 앞. 최대 RECENT_RUNS_MAX개 */
+  recentRuns: number[]
 }
 
 export interface ValidIds {
@@ -48,6 +53,7 @@ export function defaultSave(): SaveData {
     consumables: { rocket: 0, feather: 0, cushion: 0, doubleJump: 0 },
     selectedConsumables: [],
     seenQuizIds: [],
+    recentRuns: [],
   }
 }
 
@@ -65,6 +71,15 @@ function strArray(v: unknown): string[] {
   return v.filter((x): x is string => typeof x === 'string')
 }
 
+/** strArray의 숫자판. 유한한 정수로 강제·범위를 자르고, 뒤에서부터 cap개만 남긴다. */
+function numArray(v: unknown, max: number, cap: number): number[] {
+  if (!Array.isArray(v)) return []
+  return v
+    .filter((x): x is number => typeof x === 'number' && Number.isFinite(x))
+    .map((x) => Math.min(max, Math.max(0, Math.floor(x))))
+    .slice(-cap)
+}
+
 /** 2단계: 버전별 순차 마이그레이션 */
 function migrate(raw: Record<string, unknown>): Record<string, unknown> {
   const version = typeof raw['version'] === 'number' ? raw['version'] : 0
@@ -75,8 +90,12 @@ function migrate(raw: Record<string, unknown>): Record<string, unknown> {
     cur = { ...cur, version: 1 }
   }
 
-  // 이후 버전이 생기면 여기에 단계를 덧붙인다:
-  // if ((cur['version'] as number) < 2) { cur = { ...cur, version: 2, newField: ... } }
+  // v1 → v2: recentRuns 필드 추가. 순수 추가 필드라 3단계 필드별 병합이
+  // 기본값([])을 채워주므로 여기서 데이터를 옮길 필요는 없다 — version
+  // 번호만 전진시켜 다음 마이그레이션이 이어받을 지점을 남긴다.
+  if ((cur['version'] as number) < 2) {
+    cur = { ...cur, version: 2 }
+  }
 
   return cur
 }
@@ -127,6 +146,7 @@ export function parseSave(raw: string | null, valid: ValidIds): SaveData {
     },
     selectedConsumables: strArray(migrated['selectedConsumables']),
     seenQuizIds: strArray(migrated['seenQuizIds']),
+    recentRuns: numArray(migrated['recentRuns'], Number.MAX_SAFE_INTEGER, RECENT_RUNS_MAX),
   }
 
   // 4단계: 유효성 검증·보정

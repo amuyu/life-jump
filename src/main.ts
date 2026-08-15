@@ -19,6 +19,7 @@ import { renderShop } from './ui/shop'
 import { renderWardrobe } from './ui/wardrobe'
 import { renderLoadout } from './ui/loadout'
 import { renderResult } from './ui/result'
+import { renderRecords } from './ui/records'
 import { showQuiz } from './ui/quizModal'
 import * as C from './constants'
 
@@ -160,19 +161,9 @@ function render(): void {
       })
       break
     case 'records':
-      renderRecordsPlaceholder(body)
+      renderRecords(body, save)
       break
   }
-}
-
-function renderRecordsPlaceholder(mount: HTMLElement): void {
-  mount.innerHTML = ''
-  const panel = document.createElement('div')
-  panel.className = 'panel'
-  panel.innerHTML = `
-    <h2 class="type-heading-sm">기록</h2>
-    <p class="type-body-sm" style="color: var(--text-muted); margin-top: var(--space-sm)">준비 중입니다.</p>`
-  mount.appendChild(panel)
 }
 
 // 탭 진입점 — 판이 실행 중이 아닐 때만 호출되는 경로들이지만, 방어적으로

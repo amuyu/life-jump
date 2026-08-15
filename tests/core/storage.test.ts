@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   parseSave, defaultSave, loadSave, writeSave,
-  SAVE_KEY, SAVE_VERSION, UPGRADE_MAX, CONSUMABLE_MAX, DEFAULT_OUTFIT_ID,
+  SAVE_KEY, SAVE_VERSION, UPGRADE_MAX, CONSUMABLE_MAX, DEFAULT_OUTFIT_ID, RECENT_RUNS_MAX,
   type ValidIds,
 } from '../../src/core/storage'
 
@@ -165,6 +165,55 @@ describe('parseSave — 4단계 유효성 보정', () => {
   it('seenQuizIds가 배열이 아니면 빈 배열로 만든다', () => {
     const raw = JSON.stringify({ version: SAVE_VERSION, seenQuizIds: 'oops' })
     expect(parseSave(raw, VALID).seenQuizIds).toEqual([])
+  })
+
+  it('recentRuns 없는 v1 저장이 나머지를 초기화하지 않고 병합된다', () => {
+    // 실제 플레이어의 v1 저장을 흉내낸다 — recentRuns 필드 자체가 없다.
+    const v1 = JSON.stringify({
+      version: 1,
+      bestHeight: 8800,
+      totalRuns: 42,
+      thread: 120,
+      coins: 300,
+      ownedOutfits: [DEFAULT_OUTFIT_ID, 'striped'],
+      equippedOutfit: 'striped',
+      upgrades: { jump: 2, energy: 1, air: 0, magnet: 1 },
+      consumables: { rocket: 1, feather: 0, cushion: 2, doubleJump: 0 },
+      selectedConsumables: ['cushion'],
+      seenQuizIds: ['q1', 'q2'],
+    })
+    const out = parseSave(v1, VALID)
+
+    expect(out.recentRuns).toEqual([])
+    expect(out.version).toBe(SAVE_VERSION)
+    expect(out.bestHeight).toBe(8800)
+    expect(out.totalRuns).toBe(42)
+    expect(out.thread).toBe(120)
+    expect(out.coins).toBe(300)
+    expect(out.ownedOutfits).toEqual([DEFAULT_OUTFIT_ID, 'striped'])
+    expect(out.equippedOutfit).toBe('striped')
+    expect(out.upgrades).toEqual({ jump: 2, energy: 1, air: 0, magnet: 1 })
+    expect(out.consumables).toEqual({ rocket: 1, feather: 0, cushion: 2, doubleJump: 0 })
+    expect(out.selectedConsumables).toEqual(['cushion'])
+    expect(out.seenQuizIds).toEqual(['q1', 'q2'])
+  })
+
+  it('recentRuns가 배열이 아니면 빈 배열로 만든다', () => {
+    const raw = JSON.stringify({ version: SAVE_VERSION, recentRuns: 'nope' })
+    expect(parseSave(raw, VALID).recentRuns).toEqual([])
+  })
+
+  it('recentRuns의 잘못된 값을 걸러내고 정수로 자른다', () => {
+    const raw = JSON.stringify({ version: SAVE_VERSION, recentRuns: [-5, 1.7, 'x', NaN] })
+    expect(parseSave(raw, VALID).recentRuns).toEqual([0, 1])
+  })
+
+  it('recentRuns가 RECENT_RUNS_MAX를 넘으면 최신 값들로 잘린다', () => {
+    const long = Array.from({ length: 20 }, (_, i) => i)
+    const raw = JSON.stringify({ version: SAVE_VERSION, recentRuns: long })
+    const out = parseSave(raw, VALID)
+    expect(out.recentRuns).toHaveLength(RECENT_RUNS_MAX)
+    expect(out.recentRuns).toEqual(long.slice(-RECENT_RUNS_MAX))
   })
 })
 

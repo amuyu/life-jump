@@ -250,6 +250,68 @@ canvas { image-rendering: pixelated; }
 .loadout-footer { display: flex; gap: var(--space-md); }
 .loadout-footer .btn { flex: 1; }
 
+/* ── Records ───────────────────────────────────────────────────── */
+.records-header { display: flex; flex-direction: column; gap: var(--space-xs); margin-bottom: var(--space-xl); }
+.records-sub { color: var(--text-muted); }
+
+.records-top { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); margin-bottom: var(--space-lg); }
+
+.records-best-card {
+  border-radius: var(--radius-xxl);
+  background: var(--color-ink-deep);
+  color: var(--color-canvas);
+  padding: var(--space-xxl);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.records-best-label { opacity: 0.7; }
+.records-best-value { line-height: 1; margin-top: var(--space-xs); }
+.records-best-sub { opacity: 0.7; margin-top: var(--space-md); }
+
+.records-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+.records-stat-tile {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.records-stat-label { color: var(--text-muted); margin-top: var(--space-xxs); }
+
+.records-chart-panel {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+.records-chart-empty { color: var(--text-muted); margin-top: var(--space-md); }
+.records-chart { display: flex; align-items: flex-end; gap: var(--space-sm); height: 160px; margin-top: var(--space-xl); }
+.records-bar-col {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+}
+.records-bar-label { color: var(--text-muted); }
+.records-bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--surface-soft); }
+.records-bar-best { background: var(--color-success); }
+
+.records-zone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); }
+.records-zone-card { border: 1px solid var(--border-soft); border-radius: var(--radius-xl); padding: var(--space-lg); }
+.records-zone-top { display: flex; align-items: center; justify-content: space-between; }
+.records-zone-range { color: var(--text-muted); }
+.zone-bar-track { height: 6px; border-radius: var(--radius-full); background: var(--border-soft); margin-top: var(--space-base); overflow: hidden; }
+.zone-bar-fill { height: 100%; }
+.zone-bar-fill-ground { background: var(--color-primary); }
+.zone-bar-fill-sky { background: var(--color-warning); }
+.zone-bar-fill-space { background: var(--color-ink-deep); }
+.records-zone-note { color: var(--text-muted); margin-top: var(--space-sm); }
+
 /* ── Mobile — zero media queries existed before this file; this is the
    only breakpoint the shell needs: keep the tab bar wrapping and the
    header stacked so nothing overflows a narrow viewport. ─────────── */
@@ -260,6 +322,8 @@ canvas { image-rendering: pixelated; }
   .lobby-preview { height: 280px; }
   .outfit-grid { grid-template-columns: repeat(2, 1fr); }
   .consumable-grid { grid-template-columns: repeat(2, 1fr); }
+  .records-top { grid-template-columns: 1fr; }
+  .records-zone-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 760px) {

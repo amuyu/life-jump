@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { defaultSave, writeSave, loadSave, type ValidIds } from '../../src/core/storage'
+import { defaultSave, writeSave, loadSave, RECENT_RUNS_MAX, type ValidIds } from '../../src/core/storage'
 import { CONSUMABLE_IDS } from '../../src/data/shop'
 import { OUTFIT_IDS } from '../../src/data/outfits'
 import { createGameState, type RunState } from '../../src/game/state'
@@ -187,5 +187,25 @@ describe('판 종료 결산', () => {
     expect(save.thread).toBe(20)
     expect(save.coins).toBe(30)
     expect(save.totalRuns).toBe(5)
+  })
+
+  it('판을 마치면 recentRuns에 이번 판 높이가 px로 추가된다', () => {
+    const save = defaultSave()
+    runFinish(save, { maxHeight: 4200, thread: 0, coins: 0 })
+    expect(save.recentRuns).toEqual([4200])
+
+    const reloaded = loadSave(VALID)
+    expect(reloaded.recentRuns).toEqual([4200])
+  })
+
+  it('recentRuns는 RECENT_RUNS_MAX를 넘지 않는다', () => {
+    let save = defaultSave()
+    for (let i = 0; i < RECENT_RUNS_MAX + 5; i++) {
+      runFinish(save, { maxHeight: 100 * (i + 1), thread: 0, coins: 0 })
+      save = loadSave(VALID)
+    }
+    expect(save.recentRuns).toHaveLength(RECENT_RUNS_MAX)
+    // 가장 오래된 값이 앞, 최신 값이 뒤 — 마지막 판(가장 큰 높이)이 배열 끝에 있다
+    expect(save.recentRuns[save.recentRuns.length - 1]).toBe(100 * (RECENT_RUNS_MAX + 5))
   })
 })

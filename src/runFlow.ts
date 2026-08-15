@@ -1,4 +1,5 @@
 import type { SaveData } from './core/storage'
+import { RECENT_RUNS_MAX } from './core/storage'
 import type { RunModifiers, RunState } from './game/state'
 import { modifiersFrom, consumeSelected } from './data/shop'
 
@@ -33,6 +34,8 @@ export function finishRun(save: SaveData, run: RunState): FinishRunResult {
 
   const isNewBest = run.maxHeight > save.bestHeight
   if (isNewBest) save.bestHeight = run.maxHeight
+
+  save.recentRuns = [...save.recentRuns, run.maxHeight].slice(-RECENT_RUNS_MAX)
 
   return { isNewBest }
 }
