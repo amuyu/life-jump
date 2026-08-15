@@ -1,0 +1,42 @@
+// 논리 해상도
+export const LOGICAL_W = 180
+export const LOGICAL_H = 320
+
+// 타임스텝
+export const STEP = 1 / 60
+export const MAX_STEPS_PER_FRAME = 6
+// 한 프레임에 처리할 시간 상한(초). 독립 상수로 두면 부동소수점 경계에서
+// MAX_STEPS_PER_FRAME과 어긋날 수 있으므로 파생시킨다. STEP * 6 === 0.1 (정확).
+export const MAX_FRAME_DELTA = STEP * MAX_STEPS_PER_FRAME
+
+// 물리 (스펙 4절 — 변경 금지)
+export const GRAVITY = 1200
+export const JUMP_V = 480
+export const JUMP_CUTOFF = 300
+export const MOVE_SPEED = 90
+export const MAX_FALL = 600
+export const SPRING_V = 750
+
+// 파생값
+export const MAX_JUMP_HEIGHT = (JUMP_V * JUMP_V) / (2 * GRAVITY)  // 96
+export const MAX_GAP_Y = 88               // 96에서 안전 여백 8 차감
+
+// 크기
+export const PLAYER_W = 12
+export const PLAYER_H = 16
+export const PLATFORM_THICKNESS = 6
+
+// 카메라 / 생존
+export const CAMERA_FOLLOW_OFFSET = LOGICAL_H * 0.6   // 192
+export const FALL_LINE_OFFSET = -16       // camera.y + 이 값보다 낮으면 낙하
+export const REVIVE_MIN_MARGIN = 40       // 부활 후보는 camera.y + 40 이상
+export const RESCUE_MARGIN = 60           // 구조 발판은 camera.y + 60
+export const INVULN_SECONDS = 1.5
+
+// 구간 경계 (10px = 1m 이므로 300m / 900m)
+// 발판 종류 결정(Task 10)과 배경 보간(Task 12)이 함께 쓰므로 여기 둔다.
+export const SKY_START_Y = 3000
+export const SPACE_START_Y = 9000
+
+// 단위
+export const PX_PER_M = 10
