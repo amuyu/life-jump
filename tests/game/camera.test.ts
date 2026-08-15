@@ -66,6 +66,13 @@ describe('isBelowFallLine', () => {
     expect(isBelowFallLine(s)).toBe(false)
   })
 
+  it('판정선 위에 정확히 있으면 낙하하지 않는다', () => {
+    const s = createGameState(defaultModifiers())
+    s.camera.y = 500
+    s.player.y = 500 + C.FALL_LINE_OFFSET
+    expect(isBelowFallLine(s)).toBe(false)
+  })
+
   it('화면 안에 있으면 거짓', () => {
     const s = createGameState(defaultModifiers())
     s.camera.y = 500
