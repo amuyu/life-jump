@@ -13,9 +13,7 @@ import * as C from '../constants'
 
 export interface Renderer {
   draw(state: GameState): void
-  /** 착용 옷이 바뀌면 호출 — 스프라이트 캐시를 비운다 */
-  invalidate(): void
-  /** 착용 옷을 바꾼다 */
+  /** 착용 옷을 바꾼다 — 스프라이트 캐시를 비운다 */
   setOutfit(id: string): void
 }
 
@@ -48,6 +46,12 @@ const BIRDS = makeSpecks(7, 41)
 const SPACE_BAND = C.LOGICAL_H * 4
 const SPACE_OBJECTS = makeSpecks(5, 71)
 const PLANET_COLORS = ['#e17055', '#00b894', '#0984e3', '#fdcb6e', '#a29bfe']
+
+/**
+ * 땅의 잔디 두께. normal 발판 픽셀맵의 'g' 행 수에서 파생시킨다 — 땅은 발판과
+ * 같은 재질로 보여야 하므로, 픽셀맵을 고치면 땅도 따라 바뀌어야 한다.
+ */
+const GRASS_H = PLATFORM_MAPS.normal.filter((row) => row.includes('g')).length
 
 /** 오버레이에서 색이 칠해진 칸들 — 반짝임이 앉을 자리 */
 function decoratedCells(outfit: Outfit): Array<{ x: number; y: number }> {
@@ -191,12 +195,11 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
     const worldGroundY = Math.round(C.LOGICAL_H - (0 - state.camera.y))
     if (worldGroundY < C.LOGICAL_H) {
       const groundPalette = PLATFORM_PALETTES.normal
-      const grassH = 2
       const grassY = Math.max(0, worldGroundY)
       ctx.fillStyle = groundPalette['g']!
-      ctx.fillRect(0, grassY, C.LOGICAL_W, Math.min(grassH, C.LOGICAL_H - grassY))
+      ctx.fillRect(0, grassY, C.LOGICAL_W, Math.min(GRASS_H, C.LOGICAL_H - grassY))
 
-      const dirtY = Math.max(0, worldGroundY + grassH)
+      const dirtY = Math.max(0, worldGroundY + GRASS_H)
       if (dirtY < C.LOGICAL_H) {
         ctx.fillStyle = groundPalette['d']!
         ctx.fillRect(0, dirtY, C.LOGICAL_W, C.LOGICAL_H - dirtY)
@@ -275,9 +278,6 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
       drawBackground(state)
       drawPlatforms(state)
       drawPlayer(state)
-    },
-    invalidate(): void {
-      cache.clear()
     },
     setOutfit(id: string): void {
       outfit = outfitById(id)

@@ -3,7 +3,6 @@ import type { Screen } from './canvas'
 import * as C from '../constants'
 
 const HEART_W = 9
-const HEART_H = 8
 
 function drawHeart(
   ctx: CanvasRenderingContext2D, x: number, y: number, filled: boolean,

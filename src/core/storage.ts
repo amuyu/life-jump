@@ -2,6 +2,12 @@ export const SAVE_KEY = 'life-jump-save-v1'
 export const SAVE_VERSION = 1
 export const DEFAULT_OUTFIT_ID = 'basic-tee'
 
+/**
+ * 소모품 재고 상한. 로드 시 클램프하는 값과 구매 시 막는 값이 같아야 한다 —
+ * 어긋나면 상한을 넘겨 산 만큼이 다음 로드에서 조용히 사라진다.
+ */
+export const CONSUMABLE_MAX = 99
+
 export const UPGRADE_MAX = {
   jump: 3,
   energy: 2,
@@ -114,10 +120,10 @@ export function parseSave(raw: string | null, valid: ValidIds): SaveData {
       magnet: num(upgradesRaw['magnet'], 0, UPGRADE_MAX.magnet, 0),
     },
     consumables: {
-      rocket: num(consumablesRaw['rocket'], 0, 99, 0),
-      feather: num(consumablesRaw['feather'], 0, 99, 0),
-      cushion: num(consumablesRaw['cushion'], 0, 99, 0),
-      doubleJump: num(consumablesRaw['doubleJump'], 0, 99, 0),
+      rocket: num(consumablesRaw['rocket'], 0, CONSUMABLE_MAX, 0),
+      feather: num(consumablesRaw['feather'], 0, CONSUMABLE_MAX, 0),
+      cushion: num(consumablesRaw['cushion'], 0, CONSUMABLE_MAX, 0),
+      doubleJump: num(consumablesRaw['doubleJump'], 0, CONSUMABLE_MAX, 0),
     },
     selectedConsumables: strArray(migrated['selectedConsumables']),
     seenQuizIds: strArray(migrated['seenQuizIds']),

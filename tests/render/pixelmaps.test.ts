@@ -59,12 +59,9 @@ describe('플레이어 스프라이트', () => {
 })
 
 describe('발판 스프라이트', () => {
-  it('네 종류가 모두 정의되어 있다', () => {
-    for (const kind of ['normal', 'spring', 'crumble', 'moving'] as const) {
-      expect(PLATFORM_MAPS[kind], kind).toBeDefined()
-      expect(PLATFORM_PALETTES[kind], kind).toBeDefined()
-    }
-  })
+  // "네 종류가 모두 정의되어 있다"는 검사가 있었으나 Record<PlatformKind, …>가
+  // 이미 타입 단계에서 보장하므로 절대 실패할 수 없었다. 아래 검사들은 모든
+  // 항목을 실제로 순회하므로 누락은 여기서 걸린다.
 
   it('높이가 PLATFORM_THICKNESS와 일치한다', () => {
     for (const [kind, map] of Object.entries(PLATFORM_MAPS)) {
@@ -84,12 +81,7 @@ describe('발판 스프라이트', () => {
 })
 
 describe('아이템 스프라이트', () => {
-  it('네 종류가 모두 정의되어 있다', () => {
-    for (const kind of ['thread', 'coin', 'food', 'quiz'] as const) {
-      expect(ITEM_MAPS[kind], kind).toBeDefined()
-      expect(ITEM_PALETTES[kind], kind).toBeDefined()
-    }
-  })
+  // 위와 같은 이유로 Record<ItemKind, …> 존재 검사는 지웠다.
 
   it('발판 위에 올려도 답답하지 않게 8×8 이하다', () => {
     for (const [kind, map] of Object.entries(ITEM_MAPS)) {

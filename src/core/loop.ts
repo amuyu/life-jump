@@ -16,6 +16,11 @@ export function createLoop(): Loop {
     accumulator += Math.min(deltaSeconds, MAX_FRAME_DELTA)
 
     let steps = Math.floor(accumulator / STEP)
+    // 스펙 4절이 요구하는 하드 백스톱. 바로 위 delta 클램프가 이미 한 프레임에
+    // 들어오는 시간을 MAX_FRAME_DELTA(= STEP × 6)로 자르므로 현재 상수 조합에서
+    // 이 가지는 도달 불가능하다 — 방어용으로 남겨둔다. 두 상수의 관계가 바뀌면
+    // (예: 클램프를 늘리거나 스텝 상한을 줄이면) 이것이 유일한 방어선이 된다.
+    // 테스트로 덮이지 않는다는 점을 알고 두는 코드다.
     if (steps > MAX_STEPS_PER_FRAME) {
       steps = MAX_STEPS_PER_FRAME
       accumulator = 0 // 초과분 폐기 — 죽음의 나선 방지

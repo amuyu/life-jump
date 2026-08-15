@@ -5,7 +5,7 @@ import { drawHud } from './render/drawHud'
 import { createLoop } from './core/loop'
 import { createInput } from './core/input'
 import { createRng } from './core/rng'
-import { loadSave, writeSave, type SaveData } from './core/storage'
+import { loadSave, writeSave, CONSUMABLE_MAX, type SaveData } from './core/storage'
 import { createGameState, type GameState } from './game/state'
 import { stepGame } from './game/update'
 import { grantFood } from './game/items'
@@ -84,6 +84,9 @@ function showShop(): void {
     onBuyConsumable(id) {
       const item = CONSUMABLES.find((c) => c.id === id)
       if (item === undefined || save.coins < item.price) return
+      // 로드 시 재고를 CONSUMABLE_MAX로 자르므로, 상한을 넘겨 사면 코인만
+      // 날리고 다음 로드에서 재고가 사라진다. 두 쪽이 같은 상수를 본다.
+      if (save.consumables[item.id] >= CONSUMABLE_MAX) return
       save.coins -= item.price
       save.consumables[item.id] += 1
       persist()
@@ -165,7 +168,7 @@ function openQuiz(current: GameState): void {
   const question = pickQuestion(pending.platformY, save.seenQuizIds, rng)
   persist()
 
-  showQuiz(uiLayer, question, (result) => {
+  showQuiz(uiLayer, question, rng, (result) => {
     if (result.correct && result.reward !== null) {
       const reward = rewardFor(question.difficulty)
       if (result.reward === 'thread') current.run.thread += reward.thread

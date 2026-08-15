@@ -1,10 +1,9 @@
 import type { SaveData } from './core/storage'
 import type { RunModifiers, RunState } from './game/state'
-import { modifiersFrom, consumeSelected, type ConsumableId } from './data/shop'
+import { modifiersFrom, consumeSelected } from './data/shop'
 
 export interface StartRunResult {
   mods: RunModifiers
-  applied: ConsumableId[]
 }
 
 /**
@@ -15,8 +14,7 @@ export interface StartRunResult {
  */
 export function startRun(save: SaveData): StartRunResult {
   const applied = consumeSelected(save)
-  const mods = modifiersFrom(save, applied)
-  return { mods, applied }
+  return { mods: modifiersFrom(save, applied) }
 }
 
 export interface FinishRunResult {

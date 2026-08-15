@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   parseSave, defaultSave, loadSave, writeSave,
-  SAVE_KEY, SAVE_VERSION, UPGRADE_MAX, DEFAULT_OUTFIT_ID,
+  SAVE_KEY, SAVE_VERSION, UPGRADE_MAX, CONSUMABLE_MAX, DEFAULT_OUTFIT_ID,
   type ValidIds,
 } from '../../src/core/storage'
 
@@ -150,6 +150,16 @@ describe('parseSave — 4단계 유효성 보정', () => {
     const out = parseSave(raw, VALID)
     expect(out.consumables.rocket).toBe(2)
     expect(out.consumables.feather).toBe(0)
+  })
+
+  it('소모품 재고를 CONSUMABLE_MAX로 자른다', () => {
+    // 구매 쪽(main.ts)도 같은 상수로 막는다 — 어긋나면 상한 위로 산 만큼이
+    // 다음 로드에서 조용히 사라진다.
+    const raw = JSON.stringify({
+      version: SAVE_VERSION,
+      consumables: { rocket: 500, feather: 0, cushion: 0, doubleJump: 0 },
+    })
+    expect(parseSave(raw, VALID).consumables.rocket).toBe(CONSUMABLE_MAX)
   })
 
   it('seenQuizIds가 배열이 아니면 빈 배열로 만든다', () => {
