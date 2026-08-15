@@ -22,7 +22,8 @@ function withObjectParticle(name: string): string {
  *   - 전부 보유했다 → null (더 이상 보여줄 목표가 없다. 감춘다)
  *   - 이미 실이 충분하다 → 지금 만들 수 있다고 알린다 ("실 N개면"은 N=0일 때
  *     말이 안 되므로 별도 문구를 쓴다)
- *   - 아직 모자라다 → 모의 화면 그대로, 남은 실 개수로 "얼마나 가까운지"를 보여준다
+ *   - 아직 모자라다 → 부족한 실 개수로 "얼마나 가까운지"를 보여준다. remaining은
+ *     총 비용이 아니라 부족분이므로 "더 모으면"이라고 명시해야 문장이 참이 된다.
  */
 export function promoMessage(save: SaveData): string | null {
   let target: Outfit | null = null
@@ -35,7 +36,10 @@ export function promoMessage(save: SaveData): string | null {
   const name = withObjectParticle(target.name)
   const remaining = target.threadCost - save.thread
   if (remaining <= 0) return `지금 바로 ${name} 만들 수 있어요.`
-  return `실 ${remaining}개면 ${name} 만들 수 있어요.`
+  // "실 N개면 X를 만들 수 있어요"는 "N개(총량)면 충분하다"는 문장으로 읽힌다 — remaining은
+  // 총 비용이 아니라 부족분이라 그대로 쓰면 거짓 문장이 된다 (예: 줄무늬 셔츠는 5개인데
+  // "실 2개면 만들 수 있어요"라고 말해버림). "더 모으면"으로 부족분임을 명시한다.
+  return `실 ${remaining}개만 더 모으면 ${name} 만들 수 있어요.`
 }
 
 const TABS: ReadonlyArray<{ id: Tab; label: string }> = [
@@ -57,7 +61,9 @@ export function renderShell(
   const shell = document.createElement('div')
   shell.className = 'shell'
 
-  const promo = promoMessage(save)
+  // 옷장 탭에서는 배너를 감춘다 — "옷장 보기" 링크가 이미 보고 있는 화면을
+  // 가리키는 건 무의미하다. 로비·상점·기록 탭에서는 그대로 보여준다.
+  const promo = active === 'wardrobe' ? null : promoMessage(save)
   if (promo !== null) {
     const banner = document.createElement('div')
     banner.className = 'promo-banner'
