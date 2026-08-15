@@ -52,3 +52,14 @@ button.selected { background: #6ab04c; }
 .section { font-size: 13px; color: #9a9ab0; margin: 10px 0 6px; }
 .item-row small { color: #7a7a90; font-size: 11px; }
 .item-row { flex-wrap: wrap; }
+
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10;
+}
+
+.timer-bar { height: 5px; background: #2c2c3a; border-radius: 3px; margin-bottom: 12px; overflow: hidden; }
+.timer-fill { height: 100%; width: 100%; background: #f9ca24; }
+.quiz-q { font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
