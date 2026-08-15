@@ -15,6 +15,13 @@ const ALL_MAPS: Array<[string, readonly string[]]> = [
   ...Object.entries(ICON_MAPS),
 ]
 
+const ALL_PALETTES: Array<[string, Record<string, string>]> = [
+  ['SKIN_PALETTE', SKIN_PALETTE],
+  ...Object.entries(PLATFORM_PALETTES),
+  ...Object.entries(ITEM_PALETTES),
+  ...Object.entries(ICON_PALETTES),
+]
+
 describe('픽셀맵 정합성', () => {
   it('모든 맵의 각 행 길이가 같다', () => {
     for (const [name, map] of ALL_MAPS) {
@@ -37,6 +44,30 @@ describe('픽셀맵 정합성', () => {
       w: PLAYER_IDLE[0]!.length,
       h: PLAYER_IDLE.length,
     })
+  })
+
+  // spritePreview.ts의 bakeKey는 맵 행을 '|'로, 팔레트 항목을 'ch=color'꼴로
+  // ','로 이어 캐시 키를 만든다. 맵 행에 '|'가 들어가거나 팔레트 값에
+  // ','·'='·':'가 들어가면 서로 다른 두 스프라이트가 같은 키로 충돌해
+  // 엉뚱한 스프라이트가 캐시에서 튀어나올 수 있다 — 지금 데이터는 안전하지만
+  // 그 전제를 여기서 고정해 둔다.
+  it('맵 행에 bakeKey 구분자(|)가 없다', () => {
+    for (const [name, map] of ALL_MAPS) {
+      for (let i = 0; i < map.length; i++) {
+        expect(map[i]!.includes('|'), `${name} 행 ${i}`).toBe(false)
+      }
+    }
+  })
+
+  it('팔레트 값에 bakeKey 구분자(, = :)가 없다', () => {
+    for (const [name, palette] of ALL_PALETTES) {
+      for (const [ch, color] of Object.entries(palette)) {
+        const label = `${name}['${ch}']`
+        expect(color.includes(','), label).toBe(false)
+        expect(color.includes('='), label).toBe(false)
+        expect(color.includes(':'), label).toBe(false)
+      }
+    }
   })
 })
 
@@ -105,11 +136,11 @@ describe('아이템 스프라이트', () => {
 })
 
 describe('상점 아이콘 스프라이트', () => {
-  it('아이템과 같은 규약으로 8×8 이하다', () => {
+  it('모든 아이콘이 정확히 8×8이다', () => {
     for (const [kind, map] of Object.entries(ICON_MAPS)) {
       const { w, h } = mapSize(map)
-      expect(w, kind).toBeLessThanOrEqual(8)
-      expect(h, kind).toBeLessThanOrEqual(8)
+      expect(w, kind).toBe(8)
+      expect(h, kind).toBe(8)
     }
   })
 
