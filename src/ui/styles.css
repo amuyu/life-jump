@@ -14,3 +14,37 @@ body {
 #app { display: flex; align-items: center; justify-content: center; }
 
 canvas { image-rendering: pixelated; }
+
+.panel {
+  width: 320px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #16161f;
+  border: 2px solid #2c2c3a;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.panel-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+.panel-header h2 { font-size: 18px; }
+.currency { font-size: 13px; color: #f9ca24; }
+
+.item-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+
+.item-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px; background: #1e1e2b; border-radius: 6px;
+}
+.item-name { flex: 1; font-size: 13px; }
+.item-cost { font-size: 12px; color: #9a9ab0; }
+.item-desc { font-size: 11px; color: #7a7a90; width: 100%; }
+
+.swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #00000055; }
+
+button {
+  padding: 5px 10px; font-size: 12px; border: 0; border-radius: 5px;
+  background: #4834d4; color: #fff; cursor: pointer;
+}
+button:disabled { background: #33334a; color: #7a7a90; cursor: default; }
+button.wide { width: 100%; padding: 9px; }
+button.selected { background: #6ab04c; }

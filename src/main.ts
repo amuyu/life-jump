@@ -7,12 +7,13 @@ import { createInput } from './core/input'
 import { createRng } from './core/rng'
 import { createGameState, defaultModifiers } from './game/state'
 import { stepGame } from './game/update'
+import { DEFAULT_OUTFIT_ID } from './core/storage'
 
 const mount = document.getElementById('app')
 if (mount === null) throw new Error('#app 를 찾을 수 없습니다')
 
 const screen = createScreen(mount)
-const renderer = createRenderer(screen)
+const renderer = createRenderer(screen, DEFAULT_OUTFIT_ID)
 const loop = createLoop()
 const input = createInput()
 input.attach(window)

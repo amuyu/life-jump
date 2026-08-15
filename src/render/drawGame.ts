@@ -6,6 +6,8 @@ import {
   PLATFORM_MAPS, PLATFORM_PALETTES,
   ITEM_MAPS, ITEM_PALETTES, mapSize,
 } from '../data/pixelmaps'
+import { outfitById } from '../data/outfits'
+import type { Outfit } from '../data/outfits'
 import { zoneVisual, type Rgb } from '../game/zones'
 import * as C from '../constants'
 
@@ -13,6 +15,8 @@ export interface Renderer {
   draw(state: GameState): void
   /** 착용 옷이 바뀌면 호출 — 스프라이트 캐시를 비운다 */
   invalidate(): void
+  /** 착용 옷을 바꾼다 */
+  setOutfit(id: string): void
 }
 
 const rgb = (c: Rgb): string => `rgb(${c.r},${c.g},${c.b})`
@@ -38,8 +42,9 @@ function makeSpecks(count: number, seedStep: number): Speck[] {
 const STARS = makeSpecks(60, 13)
 const CLOUDS = makeSpecks(14, 29)
 
-export function createRenderer(screen: Screen): Renderer {
+export function createRenderer(screen: Screen, outfitId: string): Renderer {
   const cache = spriteCache()
+  let outfit: Outfit = outfitById(outfitId)
 
   const platformTile = (kind: Platform['kind']): Sprite =>
     cache.get(`plat:${kind}`, () =>
@@ -49,13 +54,23 @@ export function createRenderer(screen: Screen): Renderer {
     cache.get(`item:${kind}`, () =>
       bakeSprite(ITEM_MAPS[kind], ITEM_PALETTES[kind]))
 
-  // Task 19에서 옷 팔레트를 합쳐 키를 확장한다
   const playerSprite = (jumping: boolean): Sprite =>
-    cache.get(`player:${jumping ? 'jump' : 'idle'}`, () =>
-      bakeSprite(jumping ? PLAYER_JUMP : PLAYER_IDLE, {
+    cache.get(`player:${outfit.id}:${jumping ? 'jump' : 'idle'}`, () => {
+      const base = bakeSprite(jumping ? PLAYER_JUMP : PLAYER_IDLE, {
         ...SKIN_PALETTE,
-        c: '#3498db',    // 기본 티셔츠 — Task 19가 착용 옷으로 대체한다
-      }))
+        ...outfit.palette,
+      })
+      if (outfit.overlay === null) return base
+
+      // 장식을 캐릭터 위에 덧그린다
+      const deco = bakeSprite(outfit.overlay.map, outfit.overlay.palette)
+      const ctx = base.getContext('2d')
+      if (ctx !== null) {
+        ctx.imageSmoothingEnabled = false
+        ctx.drawImage(deco, 0, 0)
+      }
+      return base
+    })
 
   const drawBackground = (state: GameState): void => {
     const ctx = screen.ctx
@@ -170,6 +185,10 @@ export function createRenderer(screen: Screen): Renderer {
       drawPlayer(state)
     },
     invalidate(): void {
+      cache.clear()
+    },
+    setOutfit(id: string): void {
+      outfit = outfitById(id)
       cache.clear()
     },
   }
