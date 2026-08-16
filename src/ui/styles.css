@@ -9,6 +9,7 @@ body {
   color: var(--text-body);
   font-family: var(--font-body);
   min-height: 100vh;
+  touch-action: manipulation;
 }
 
 #app { min-height: 100vh; }
@@ -44,6 +45,13 @@ canvas { image-rendering: pixelated; }
   align-items: center;
   justify-content: center;
   background: var(--surface-soft);
+  /* 판 중: 스크롤·핀치·풀투리프레시 차단, 롱프레스 선택/메뉴 차단.
+     overscroll-behavior 는 body 에 두지 않는다 — 로비·상점의 스크롤 감각까지 바꾼다.
+     여기서 못 막는 iOS 러버밴드는 touch.ts 의 touchmove preventDefault 가 잡는다. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .hidden { display: none !important; }
 
@@ -325,6 +333,98 @@ canvas { image-rendering: pixelated; }
 .zone-bar-fill-sky { background: var(--color-warning); }
 .zone-bar-fill-space { background: var(--color-ink-deep); }
 .records-zone-note { color: var(--text-muted); margin-top: var(--space-sm); }
+
+/* ── Touch controls overlay ──────────────────────────────────────
+   gameLayer 안에서 캔버스 위에 겹친다. pointer-events: none — 판정은 gameLayer 가 하고
+   여기는 그림만이다. 좌표는 CSS px (손가락 좌표계)라 캔버스 HUD(논리 180×320)와 섞지 않는다. */
+.touch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  --touch-glyph: rgba(255, 255, 255, 0.95);
+  --touch-glyph-outline: rgba(0, 0, 0, 0.55);
+  --touch-glyph-idle: 0.25;
+  --touch-glyph-active: 0.6;
+  --touch-bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+}
+.touch-overlay-glyphs-hidden .touch-track-rest,
+.touch-overlay-glyphs-hidden .touch-jump-glyph { display: none; }
+
+.touch-track {
+  position: absolute;
+  width: 96px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--touch-glyph);
+  text-shadow: 0 0 2px var(--touch-glyph-outline), 0 0 1px var(--touch-glyph-outline);
+  opacity: var(--touch-glyph-idle);
+  transition: opacity 120ms ease;
+}
+.touch-track.is-active { opacity: var(--touch-glyph-active); }
+.touch-track-arrow { font-size: 14px; line-height: 1; }
+.touch-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: var(--radius-circle);
+  background: var(--touch-glyph);
+  box-shadow: 0 0 0 1px var(--touch-glyph-outline);
+  transition: transform 60ms linear;
+}
+/* 하단 상시 트랙 — 왼쪽 절반 가운데 */
+.touch-track-rest {
+  left: 25%;
+  bottom: var(--touch-bottom);
+  transform: translateX(-50%);
+}
+/* 손가락 위 트랙 — left/top 을 anchor 로 옮기고 중심을 맞춘다 */
+.touch-track-live {
+  transform: translate(-50%, -50%);
+  opacity: var(--touch-glyph-active);
+}
+.touch-jump-glyph {
+  position: absolute;
+  left: 75%;
+  bottom: var(--touch-bottom);
+  transform: translateX(-50%);
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--touch-glyph);
+  text-shadow: 0 0 2px var(--touch-glyph-outline), 0 0 1px var(--touch-glyph-outline);
+  opacity: var(--touch-glyph-idle);
+  transition: opacity 120ms ease;
+}
+.touch-jump-glyph.is-active { opacity: var(--touch-glyph-active); }
+
+.touch-hint {
+  position: absolute;
+  top: max(24px, calc(env(safe-area-inset-top) + 12px));
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(10, 19, 23, 0.72);
+  color: var(--color-canvas);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.touch-hint-shown { opacity: 1; }
+.touch-hint-fading { opacity: 0; }
 
 /* ── Mobile ────────────────────────────────────────────────────────────
    두 중단점 모두 max-width라 좁은 화면에서는 둘 다 일치한다. 미디어 쿼리는
