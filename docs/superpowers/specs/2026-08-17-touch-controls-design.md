@@ -20,8 +20,8 @@
 | 이동 판정 | 터치 시작점 기준 상대 조이스틱 (데드존 + 따라오는 중심) |
 | 점프 판정 | 홀드 버튼 — down = 엣지 + held, up = held 해제 |
 | 판정 영역 | 화면 절반 전체(캔버스 밖 여백 포함). 그림은 힌트일 뿐 |
-| 가시성 | 왼쪽 하단 ◀ ▶, 오른쪽 하단 ● 글리프를 DOM 오버레이로 상시 표시(터치 기기) |
-| 입력 소스 | 키보드·터치 상시 병존. 모드 선택 없음 |
+| 가시성 | 왼쪽 하단 슬라이더 트랙 `◀ ─●─ ▶`, 오른쪽 하단 ● 글리프를 DOM 오버레이로 상시 표시(터치 기기). 버튼처럼 보이지 않게 — 판정이 "밀기"이므로 그림도 "밀기"여야 한다 |
+| 입력 소스 | 키보드·터치 상시 병존, 소스별 상태를 OR. 모드 선택 없음 |
 | `game/` 계층 | 변경 없음 — `InputState` 그대로 |
 
 ### 비목표
@@ -39,31 +39,33 @@
 
 ```
 src/core/input.ts        InputState / Input 인터페이스 유지.
-                         액션 단위 API 추가: press(action) / release(action)
-                           action = 'left' | 'right' | 'jump'
-                         handleKeyDown/Up 은 키코드 → 액션 매핑 후 press/release 를 부르는 얇은 층.
-                         jumpBlocked·엣지 로직은 press('jump') 안으로 이동 —
-                         키보드와 터치가 같은 규칙을 탄다.
+                         소스별 상태 + 액션 단위 API 추가: press(action, source) / release(action, source)
+                           action = 'left' | 'right' | 'jump',  source = 'keyboard' | 'touch'
+                         스냅샷은 두 소스의 OR. handleKeyDown/Up 은 키코드 → 액션 매핑 후
+                         press/release(…, 'keyboard') 를 부르는 얇은 층.
+                         jumpBlocked 는 키보드 소스에만 존재한다 (키 반복 keydown 문제는 키보드 고유).
 
-src/core/touch.ts  (신규) 터치 컨트롤러. Pointer Events → 존/조이스틱 판정 → input.press/release.
-                         전달받은 element 하나에 attach. pointerId 별 상태를 들고 있다가
-                         up/cancel 에서 자기 액션만 해제. reset() 으로 전부 해제.
+src/core/touch.ts  (신규) 터치 컨트롤러. Pointer Events → 존/조이스틱 판정 → input.press/release(…, 'touch').
+                         전달받은 element 하나에 attach → detach 함수를 돌려준다.
+                         pointerId 별 상태를 들고 있다가 up/cancel 에서 자기 액션만 해제.
+                         reset() 은 포인터를 suppressed 로 표시하고 액션을 해제한다.
                          DOM 의존은 전달받은 element 뿐 (document/window 직접 참조 없음).
 
-src/ui/touchOverlay.ts (신규) ◀ ▶ ● 글리프 + 조이스틱 인디케이터 + 첫 판 안내. 순수 DOM.
+src/ui/touchOverlay.ts (신규) 슬라이더 트랙 + ● 글리프 + 조이스틱 인디케이터 + 첫 판 안내. 순수 DOM.
                          touch.ts 가 발행하는 스냅샷을 받아 그리기만 한다 — 자체 상태 없음.
 
 src/toss/screen.ts (신규) setIosSwipeGestureEnabled 래퍼. 동적 import + isSupported 가드,
-                         실패는 삼킨다. 브라우저에서는 no-op.
+                         호출 직렬화, 실패는 삼킨다. 브라우저에서는 no-op.
 
-src/main.ts              startRun: touch.attach(gameLayer), overlay 마운트, 스와이프백 off.
-                         판 종료·로비 복귀: touch.detach, overlay 제거, 스와이프백 on.
+src/main.ts              startRun: detachTouch = touch.attach(gameLayer), overlay 마운트, 스와이프백 off.
+                         판 종료·로비 복귀: detachTouch(), overlay 제거, 스와이프백 on.
                          input.reset() 을 부르는 모든 지점(퀴즈 종료, visibilitychange, startRun)에서
-                         touch.reset() 도 함께 부른다.
+                         touch.reset() 도 함께 부른다. 두 reset 은 순서 무관하다 (3절, 4.6절).
 ```
 
-**멀티 소스 충돌** — 키보드 ←를 누른 채 터치 ◀를 떼는 경우는 마지막 호출이 이긴다.
-폰에 외장 키보드를 붙인 경우뿐이라 참조 카운트는 두지 않는다.
+**멀티 소스** — 키보드와 터치(마우스 포함)는 각자 상태를 가지며 스냅샷에서 OR 된다.
+키보드 ←를 누른 채 마우스로 이동 존을 눌렀다 떼도 ←는 살아 있다. 마우스도 Pointer Events 로
+들어오므로 데스크탑에서 흔히 일어나는 조합이다. 좌우가 동시에 참이면 물리가 이미 방향을 0 으로 만든다.
 
 **계층 경계** — `touch.ts`, `touchOverlay.ts`, `toss/screen.ts` 모두 `game/` 밖이다.
 `tests/architecture.test.ts` 는 변경 없이 그대로 통과해야 한다.
@@ -72,26 +74,46 @@ src/main.ts              startRun: touch.attach(gameLayer), overlay 마운트, �
 
 ```ts
 export type InputAction = 'left' | 'right' | 'jump'
+export type InputSource = 'keyboard' | 'touch'
 
 export interface Input {
   snapshot(): InputState
   consume(): void
   reset(): void
-  /** 소스 무관 액션 진입점 — 키보드·터치 모두 이것을 부른다 */
-  press(action: InputAction): void
-  release(action: InputAction): void
-  /** 기존 저수준 진입점 — 키코드를 액션으로 바꿔 press/release 에 위임 */
+  /** 소스별 액션 진입점 — 키보드는 'keyboard', 터치 컨트롤러는 'touch' 로 부른다 */
+  press(action: InputAction, source: InputSource): void
+  release(action: InputAction, source: InputSource): void
+  /** 기존 저수준 진입점 — 키코드를 액션으로 바꿔 press/release(…, 'keyboard') 에 위임 */
   handleKeyDown(code: string): void
   handleKeyUp(code: string): void
   attach(target, shouldCapture?): () => void
 }
 ```
 
-- `press('left'|'right')` → 해당 플래그 true. `release` → false.
-- `press('jump')`: `jumpBlocked` 이면 무시. `!jumpHeld` 이면 `jumpPressed = true` (엣지).
-  `jumpHeld = true`. — 기존 `handleKeyDown` 의 로직을 그대로 옮긴 것.
-- `release('jump')`: `jumpHeld = false`, `jumpBlocked = false`.
-- `reset()`: 기존과 동일 (`jumpBlocked = jumpHeld` 후 전부 해제).
+내부 상태:
+
+```ts
+type SourceState = { left: boolean; right: boolean; jumpHeld: boolean }
+const kb: SourceState, touch: SourceState
+let jumpPressed = false
+let kbJumpBlocked = false      // 키보드 전용 — 키 반복 keydown 이 새 누름과 구분되지 않기 때문
+```
+
+- `snapshot()`: `left = kb.left || touch.left`, `right = kb.right || touch.right`,
+  `jumpHeld = kb.jumpHeld || touch.jumpHeld`, `jumpPressed` 는 그대로.
+- `press('left'|'right', src)` → `src` 의 플래그 true. `release` → false. 다른 소스는 건드리지 않는다.
+- `press('jump', src)`:
+  - `src === 'keyboard' && kbJumpBlocked` 이면 무시.
+  - 합산 `jumpHeld` 가 **false 였다가 true 가 되는 경우에만** `jumpPressed = true` (엣지).
+    Space 를 누른 채 마우스로 점프 존을 클릭해도 새 엣지가 아니다.
+  - `src.jumpHeld = true`.
+- `release('jump', src)`: `src.jumpHeld = false`. `src === 'keyboard'` 이면 `kbJumpBlocked = false`.
+- `reset()`:
+  - `kbJumpBlocked = kb.jumpHeld` (기존 규약 — 눌려 있던 키는 실제 keyup 까지 죽은 키).
+  - `kb`, `touch` 모두 전부 false. `jumpPressed = false`.
+  - 터치에는 block 이 없다 — `pointerdown` 은 반복되지 않으므로 4.6 의 suppressed 규칙만으로 충분하다.
+    이 덕에 `input.reset()` 과 `touch.reset()` 의 호출 순서는 결과에 영향을 주지 않는다:
+    어느 쪽이 먼저든 touch 소스는 전부 false, `kbJumpBlocked` 는 키보드 상태만 본다.
 - 키보드 코드 세트(`JUMP_CODES` 등)와 `attach` 의 preventDefault 게이트는 그대로.
 
 ## 4. 터치 컨트롤러 (`core/touch.ts`)
@@ -109,6 +131,7 @@ export interface TouchSnapshot {
 }
 
 export interface TouchController {
+  /** DOM 배선. 반환된 함수가 detach — 호출자(main.ts)가 보관한다 */
   attach(el: HTMLElement): () => void
   reset(): void
   subscribe(cb: (s: TouchSnapshot) => void): () => void
@@ -127,14 +150,20 @@ export interface PointerLike {
 export function createTouch(input: Input, layout: () => { width: number }): TouchController
 ```
 
-`layout()` 은 존 경계 계산용 폭을 돌려준다 — 실제로는 `el.clientWidth`. 테스트에서는 상수.
+- `layout()` 은 존 경계 계산용 폭을 돌려준다 — 실제로는 `el.clientWidth`. 테스트에서는 상수.
+- `attach` 는 DOM 이벤트를 `PointerLike` 로 바꿔 `handlePointer` 에 넘긴다:
+  `pointerdown→'down'`, `pointermove→'move'`, `pointerup→'up'`, `pointercancel→'cancel'`,
+  `lostpointercapture→'cancel'`. 마지막 것은 up 뒤에도 한 번 더 오지만 그때는 이미 추적 목록에
+  없는 포인터라 무시된다. `handlePointer` 의 타입 집합은 넷뿐이다 — 테스트는 `'cancel'` 로 검증한다.
+- `attach` 는 같은 element 에 `touchmove` `{ passive: false }` + `preventDefault()` 도 건다
+  (iOS 러버밴드 안전망, 7.1). detach 가 함께 뗀다.
 
 ### 4.2 존
 
 - 경계 `W/2`. `clientX < W/2` → 이동 존, 그 외 → 점프 존.
 - 존은 **down 시점에 결정**되고 손가락이 경계를 넘어가도 바뀌지 않는다.
-- 한 존에 한 포인터. 이미 활성 포인터가 있는 존에 두 번째 down 이 오면 무시(추적하지 않음).
-  그 포인터의 후속 move/up 도 무시된다.
+- 한 존에 한 포인터. 이미 추적 중인 포인터(활성이든 4.6 의 suppressed 든)가 있는 존에 두 번째 down 이
+  오면 무시(추적하지 않음). 그 포인터의 후속 move/up 도 무시된다.
 
 ### 4.3 이동 존 — 상대 조이스틱
 
@@ -142,16 +171,21 @@ export function createTouch(input: Input, layout: () => { width: number }): Touc
 
 ```ts
 const DEAD = 12     // CSS px. 이 안이면 정지
-const FOLLOW = 36   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심이 따라온다
+const FOLLOW = 24   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심이 따라온다. 반드시 DEAD 보다 커야 한다
 ```
 
 - `down`: `anchor = (clientX, clientY)`, `dir = 0`.
 - `move`: `dx = clientX − anchor.x`.
   - `|dx| > FOLLOW` 이면 `anchor.x = clientX − sign(dx) · FOLLOW` (항상 `|dx| ≤ FOLLOW`).
-    → 반대 방향으로 `FOLLOW − DEAD = 24px` 만 되돌리면 즉시 반전.
   - `dx > DEAD` → 1, `dx < −DEAD` → −1, 아니면 0.
   - `dir` 이 바뀔 때만: 이전 dir 의 액션 `release`, 새 dir 의 액션 `press`. 매 move 마다 부르지 않는다.
 - `up`/`cancel`: 현재 dir 액션 `release`, 포인터 상태 삭제, `dir = 0`.
+
+**거리 성질** (테스트가 이 수치를 고정한다):
+- 한 방향으로 계속 밀면 anchor 가 따라와 `dx = ±FOLLOW` 에 머문다. `FOLLOW > DEAD` 이므로 손가락을
+  **멈춰도 방향이 유지**된다. `FOLLOW ≤ DEAD` 로 두면 멈추는 순간 정지해 버린다 — 그래서 하한 제약.
+- 반전: anchor 가 `finger − FOLLOW` 에 있는 상태에서 왼쪽 판정(`dx < −DEAD`)까지 손가락이 가야 하는
+  거리는 `FOLLOW + DEAD = 36px`. (24/12 는 시작값. 실기기에서 둔하면 FOLLOW 를 줄인다 — 단 DEAD 초과 유지.)
 
 ### 4.4 점프 존 — 홀드 버튼
 
@@ -161,16 +195,20 @@ const FOLLOW = 36   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 ### 4.5 포인터 캡처·취소
 
 - `down` 에서 `el.setPointerCapture(pointerId)` — 손가락이 요소 밖으로 나가도 up 을 받는다.
-- `pointercancel`, `lostpointercapture` 는 `up` 과 동일 처리.
+- `cancel` 은 `up` 과 동일 처리 (4.1 의 매핑으로 `pointercancel`/`lostpointercapture` 둘 다 여기로 온다).
 - `pointerType` 을 가리지 않는다 — 마우스도 동작하며 데스크탑 개발 확인에 쓰인다.
 
 ### 4.6 reset()
 
-- 추적 중인 모든 포인터 삭제 + 잡고 있던 액션 전부 `release`.
-- `input.reset()` 이 `jumpBlocked = jumpHeld` 를 걸어두므로, 퀴즈 모달을 닫을 때 손가락이
-  아직 점프 존에 눌려 있어도 그 손가락은 죽은 키가 되고, 실제 up 후 다음 down 이 진짜 엣지가
-  된다 — 키보드와 동일 규약.
-- reset 이후 stale pointerId 의 up/move 는 무시된다(추적 목록에 없음).
+- 추적 중인 모든 포인터를 **삭제하지 않고 `suppressed = true` 로 표시**하고, 잡고 있던 액션을 전부
+  `release(…, 'touch')` 한다. `dir = 0`.
+- suppressed 포인터는 존을 계속 점유한다 — 그 손가락이 떠 있는 동안 같은 존의 다른 down 은 4.2 규칙으로
+  무시된다. suppressed 포인터의 `move` 는 무시, `up`/`cancel` 은 추적 목록에서 제거만 한다(액션 없음).
+- 결과: 퀴즈 모달을 닫을 때 손가락이 아직 점프 존에 눌려 있어도 그 손가락은 죽은 손가락이 되고,
+  실제 up 후 다음 down 이 진짜 엣지가 된다. 그동안 두 번째 손가락으로 점프 존을 눌러도 안 먹는다 —
+  키보드의 `kbJumpBlocked` 와 같은 체감이지만 메커니즘은 존 점유다.
+- `input.reset()` 과의 순서는 무관하다 (3절). 둘 다 터치 소스를 전부 false 로 만들 뿐이다.
+- 추적 목록에 없는 pointerId 의 move/up 은 언제나 무시된다.
 
 ### 4.7 스냅샷 발행
 
@@ -187,15 +225,22 @@ const FOLLOW = 36   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 
 ### 5.2 상시 글리프
 
-- 왼쪽 하단 `◀ ▶`, 오른쪽 하단 `●`. 각 절반 폭의 가운데 정렬.
-- 하단 여백 `max(24px, env(safe-area-inset-bottom) + 12px)`.
-- 크기 56px. 흰색 + 검은 외곽선(캔버스 색조와 충돌 방지). 색 토큰은 `tokens.css` 것을 쓴다.
-- 기본 opacity 0.25. 활성 존은 0.6. 이동 존은 활성 방향(◀ 또는 ▶)만 밝아진다.
+그림은 판정과 같은 동사를 말해야 한다. 이동은 "밀기"이므로 두 개의 버튼(◀ ▶)이 아니라
+**하나의 슬라이더 트랙**으로 그린다 — 탭하면 움직일 것처럼 보이면 안 된다.
+
+- 왼쪽 하단: 슬라이더 트랙 `◀ ─●─ ▶` — 가로 96px 트랙(양끝 화살표는 트랙의 일부, 별도 버튼 아님)
+  + 가운데 노브 점. 오른쪽 하단: `●` 56px.
+- 각 절반 폭의 가운데 정렬. 하단 여백 `max(24px, env(safe-area-inset-bottom) + 12px)`.
+- 흰색 + 검은 외곽선(캔버스 색조와 충돌 방지). 색 토큰은 `tokens.css` 것을 쓴다.
+- 기본 opacity 0.25. 활성 존은 0.6. 이동 존은 `moveDir` 에 따라 노브가 트랙 안에서 좌/중/우로 옮겨 그린다.
 
 ### 5.3 조이스틱 인디케이터
 
-- 이동 존 터치 중에만: `moveAnchor` 에 테두리 원 20px, `movePoint` 에 채운 점 10px.
-  anchor 가 따라오면 원도 따라온다. 손을 떼면 즉시 사라진다.
+- 이동 존 터치 중에만: `moveAnchor` 위치에 **같은 모양의 슬라이더 트랙**(5.2 와 동일, 불투명도 0.6)을
+  띄우고 `movePoint.x − moveAnchor.x` 를 노브 위치로 그린다(±FOLLOW 를 트랙 반폭에 매핑).
+  anchor 가 따라오면 트랙도 따라온다. 손을 떼면 즉시 사라진다.
+- 하단 상시 트랙과 손가락 위 트랙이 같은 그림이라 "저 그림이 손가락 밑에서 이렇게 움직이는 것"이
+  한 번에 읽힌다.
 
 ### 5.4 표시 조건
 
@@ -207,8 +252,9 @@ const FOLLOW = 36   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 
 - 조건: `save.controlsHintSeen === false`.
 - 내용: 화면 중앙 상단 반투명 배지 한 줄.
-  - 터치 기기(5.4 기준): "왼쪽 밀어서 이동 · 오른쪽 탭 점프"
-  - 그 외: "← → 이동 · Space 점프"
+  - 터치 기기(5.4 기준): "왼쪽 밀어서 이동 · 오른쪽 길게 눌러 점프"
+  - 그 외: "← → 이동 · Space 길게 눌러 점프"
+  ("탭"이 아니라 "길게"라야 가변 점프를 가르친다.)
 - 노출: 판 시작 후 1.5초 표시 → 0.3초 페이드. **어떤 입력이든 들어오면 즉시 페이드**
   (touch 스냅샷 변화 또는 키보드 — main.ts 가 `input.snapshot()` 에서 어느 플래그든 참이 되는 첫
   프레임에 `hint.dismiss()` 를 부른다).
@@ -226,40 +272,58 @@ const FOLLOW = 36   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 ### 7.1 CSS (`styles.css`)
 
 ```css
-body { overscroll-behavior: none; touch-action: manipulation; }   /* 더블탭 줌 제거 */
+body { touch-action: manipulation; }   /* 더블탭 줌 제거. 스크롤·핀치는 그대로 — 로비/상점은 일반 문서다 */
 .game-layer {
-  touch-action: none;                  /* 스크롤·핀치·풀투리프레시 차단 */
+  touch-action: none;                  /* 판 중: 스크롤·핀치·풀투리프레시 차단 */
   user-select: none; -webkit-user-select: none;
   -webkit-touch-callout: none;         /* 롱프레스 메뉴 */
 }
 ```
 
-- iOS 러버밴드 안전망: 판 중 gameLayer 에 `touchmove` `{ passive: false }` + `preventDefault()`.
-  attach/detach 와 수명을 같이 한다.
+- `overscroll-behavior` 는 body 에 두지 않는다 — 로비·상점의 스크롤 감각까지 바꾼다. 판 중에는
+  `.game-layer` 가 `touch-action: none` 인 fixed 오버레이라 터치가 body 스크롤로 내려가지 않고,
+  iOS 에서 그래도 새는 러버밴드는 4.1 의 `touchmove preventDefault` 가 막는다.
 - 캔버스 배치는 변경 없음. 정수 배율로 남는 여백은 존의 일부이므로 오히려 도움이 된다.
 
 ### 7.2 iOS 스와이프백 (`toss/screen.ts`)
 
-- `startRun` → `setIosSwipeGestureEnabled({ isEnabled: false })`,
-  판 종료·로비 복귀 → `{ isEnabled: true }`. 왼쪽 엄지가 화면 왼쪽 가장자리에서 시작하는 것을
-  뒤로가기로 먹지 않게 한다.
-- 동적 import + `isSupported` 가드, 예외는 삼킨다. 브라우저에서는 no-op.
-- 확인 항목: web-framework 패키지에서의 정확한 export 경로(문서는 `@apps-in-toss/framework` 기준
-  `setIosSwipeGestureEnabled(options: { isEnabled: boolean }): Promise<void>`).
+- `startRun` → `setSwipeBack(false)`, 판 종료·로비 복귀 → `setSwipeBack(true)`.
+  왼쪽 엄지가 화면 왼쪽 가장자리에서 시작하는 것을 뒤로가기로 먹지 않게 한다.
+- 래퍼 규약:
+  - 동적 import + `isSupported` 가드, 예외는 삼킨다. 브라우저에서는 no-op.
+  - **호출 직렬화** — 내부 promise 체인에 이어 붙여 앞 호출이 끝난 뒤 다음을 보낸다. 네이티브에
+    도달하는 순서를 보장해야 하므로 generation token(JS 쪽 상태만 맞춤)이 아니라 직렬화다.
+  - 마지막으로 *요청한* 값과 같으면 스킵(중복 호출 억제). 짧은 판이 연달아 끝나도 로비에서 스와이프백이
+    꺼진 채 남지 않는다.
+- SDK 시그니처(문서 기준): `setIosSwipeGestureEnabled(options: { isEnabled: boolean }): Promise<void>`.
+  export 경로는 7.4 선행 확인 항목.
 
 ### 7.3 granite (참고, 본 범위 밖)
 
 - `webViewProps: { type: 'game' }`. iOS 에서 상단 내비바가 남으면 `navigationBar: { transparentBackground: true }`.
 - SDK 3.x 에서 `webViewProps` → `webView` 로 바뀌고 `type` 이 삭제된다.
 
+### 7.4 선행 확인 작업 (구현 전에 답을 내야 하는 것)
+
+구현 명세가 아니라 **조사 태스크**다. 답이 나오기 전까지 `toss/screen.ts` 는 인터페이스만 두고
+본문은 no-op 으로 둘 수 있다 — 나머지 설계는 여기에 의존하지 않는다.
+
+| 항목 | 확인 방법 | 답이 다르면 |
+|---|---|---|
+| `setIosSwipeGestureEnabled` 가 `@apps-in-toss/web-framework` 에서 export 되는가, 이름·시그니처가 같은가 | 패키지 설치 후 `node_modules/@apps-in-toss/web-framework` 의 d.ts 검색 | 이름만 다르면 래퍼 안에서 매핑. 없으면 7.2 전체를 보류하고 실기기에서 스와이프백 충돌 빈도를 먼저 잰다 |
+| 판 중 Android 뒤로가기 버튼의 기본 동작 | 앱인토스 QR 로 실기기 확인 | 미니앱이 바로 닫히면 별도 스펙(비목표 유지, 메모만) |
+| Toss WebView 에서 Pointer Events 멀티터치·`setPointerCapture` 가 정상인가 | 실기기 체크리스트(9절) 첫 항목 | 깨지면 `touchstart/move/end` 로 attach 층만 교체 — `handlePointer` 이하 로직은 그대로 |
+
 ## 8. `main.ts` 배선
 
 ```
+모듈 스코프: let detachTouch: (() => void) | null = null, overlay: { unmount(): void } | null = null
+
 startRun:
-  touch.attach(gameLayer)  (touchmove preventDefault 포함)
+  detachTouch = touch.attach(gameLayer)   (touchmove preventDefault 포함)
   overlay = mountTouchOverlay(gameLayer, touch, { showHint: !save.controlsHintSeen, ... })
-  swipeBack(false)
-  (기존) loop.reset(); input.reset(); → touch.reset() 추가
+  setSwipeBack(false)
+  (기존) loop.reset(); input.reset(); → touch.reset() 추가 (순서 무관)
 
 openQuiz 종료 콜백:
   (기존) loop.reset(); input.reset(); → touch.reset() 추가
@@ -268,8 +332,9 @@ visibilitychange (복귀):
   (기존) loop.reset(); input.reset(); → touch.reset() 추가
 
 finishRun / goToLobby / enterLoadout:
-  touch.detach(); overlay.unmount(); swipeBack(true)
+  detachTouch?.(); detachTouch = null; overlay?.unmount(); overlay = null; setSwipeBack(true)
   (결과 모달은 gameLayer 위 z-30 이라 터치가 게임에 닿지 않지만, detach 로 리스너 자체를 뗀다)
+  goToLobby/enterLoadout 은 판 중이 아닐 때도 불리므로 null 가드로 멱등하게 둔다.
 
 frame:
   안내 표시 중이면 input.snapshot() 에 참 플래그가 하나라도 있을 때 hint.dismiss()
@@ -280,20 +345,29 @@ frame:
 ### `tests/core/touch.test.ts` — DOM 없이 `handlePointer` 로
 
 - 존: `W/2` 기준 down 시점 고정. 이동 존에서 시작한 손가락이 경계를 넘어도 점프가 안 된다.
-- 조이스틱: 데드존 안 정지, `DEAD` 초과 시 방향, `FOLLOW` 초과 시 anchor 이동 후 `FOLLOW−DEAD` 되돌림에 즉시 반전.
-- press/release 는 dir 변화 시에만 호출된다 (스파이 호출 횟수).
+- 조이스틱: 데드존 안 정지, `DEAD` 초과 시 방향, 한 방향으로 계속 밀어 anchor 가 따라온 뒤
+  **손가락을 멈춰도 방향 유지**, 그 상태에서 반대로 `FOLLOW+DEAD` (36px) 되돌리면 반전 —
+  `FOLLOW+DEAD−1` 에서는 아직 정지(0).
+- press/release 는 dir 변화 시에만 호출된다 (스파이 호출 횟수). 모두 `source === 'touch'`.
 - 점프: down = 엣지 + held, up = held 해제. 활성 포인터가 있는 동안 두 번째 포인터 down = 무시.
 - 공중 재down(같은 포인터 up 후 down) = 두 번째 엣지.
 - 존별 두 번째 포인터 무시 — 후속 move/up 도 무시.
-- `cancel` = up. `lostpointercapture` 경로도 up.
-- reset: 액션 전부 release, 이후 stale pointerId 의 up/move 는 무해.
-- 스냅샷: 상태 변화마다 발행, 내용 정확.
+- `cancel` = up (액션 해제 + 추적 제거).
+- reset: 액션 전부 release. 그 뒤 **suppressed 포인터의 move 는 무시, up 은 제거만**;
+  suppressed 포인터가 떠 있는 동안 같은 존의 새 down 은 무시(첫 손가락 누른 채 두 번째 손가락 jump 안 됨);
+  suppressed 포인터가 up 된 뒤의 새 down 은 정상 엣지.
+- 추적 목록에 없는 pointerId 의 move/up 은 무해.
+- 스냅샷: 상태 변화마다 발행, 내용 정확 (`lastPointerType` 포함).
 
 ### `tests/core/input.test.ts`
 
 - 기존 키보드 테스트 전부 통과.
-- `press('jump')` 경로에서 `jumpBlocked` 규약: reset 시 held 였으면 다음 press 무시, release 후 press 는 엣지.
-- `press('left')` + `handleKeyUp('ArrowLeft')` → 마지막 호출이 이긴다(false).
+- 소스 분리: `handleKeyDown('ArrowLeft')` + `press('left','touch')` + `release('left','touch')` → `left` 여전히 true.
+  반대(터치 held 중 키 up)도 대칭으로.
+- 점프 엣지는 합산 held 의 false→true 에서만: 키보드 held 중 `press('jump','touch')` 는 `jumpPressed` 를 세우지 않는다.
+- `kbJumpBlocked` 는 키보드만: reset 시 kb held 였으면 다음 `press('jump','keyboard')` 무시, 하지만
+  같은 시점의 `press('jump','touch')` 는 엣지가 된다(터치는 4.6 의 존 점유로 따로 막힌다).
+- `input.reset()` / `touch.reset()` 순서 두 가지 모두에서 최종 스냅샷이 같다 (touch 컨트롤러와 함께 도는 통합 케이스).
 
 ### `tests/core/storage.test.ts`
 
