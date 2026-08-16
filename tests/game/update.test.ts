@@ -354,3 +354,65 @@ describe('stepGame — run 모디파이어가 실제로 물리에 반영된다 (
     expect(distBoosted).toBeGreaterThan(distBase)
   })
 })
+
+describe('stepGame — 공중에서 주운 퀴즈는 착지할 때 뜬다', () => {
+  // 낙하 중인 플레이어와, 그 아래 착지할 발판 하나
+  function fallingToward(platY: number) {
+    const s = createGameState(defaultModifiers())
+    s.platforms = [makePlatform(1, 0, platY, C.LOGICAL_W)]
+    s.highestGeneratedY = platY
+    s.player.y = platY + 30
+    s.player.prevY = platY + 30
+    s.player.vy = -100
+    s.player.onGround = false
+    s.standingOnId = null
+    return s
+  }
+
+  it('들고 있는 동안에는 멈추지 않고 계속 떨어진다', () => {
+    const s = fallingToward(400)
+    s.heldQuiz = { platformY: 777 }
+    const startY = s.player.y
+
+    stepGame(s, NONE, deps())
+
+    expect(s.player.onGround).toBe(false)
+    expect(s.player.y).toBeLessThan(startY)   // 실제로 낙하가 진행됐다
+    expect(s.paused).toBe(false)
+    expect(s.pendingQuiz).toBeNull()
+    expect(s.heldQuiz).toEqual({ platformY: 777 })
+  })
+
+  it('발이 땅에 닿는 순간 퀴즈가 뜨고 게임이 멈춘다', () => {
+    const s = fallingToward(400)
+    s.heldQuiz = { platformY: 777 }
+
+    let steps = 0
+    while (!s.player.onGround && steps < 60) { stepGame(s, NONE, deps()); steps++ }
+
+    expect(s.player.onGround).toBe(true)      // 착지 자체가 일어났는지 먼저 확인
+    expect(s.pendingQuiz).toEqual({ platformY: 777 })   // 주웠던 발판 높이가 보존된다
+    expect(s.heldQuiz).toBeNull()
+    expect(s.paused).toBe(true)
+  })
+
+  it('스프링으로 즉시 튕겨 나가면 아직 뜨지 않는다', () => {
+    // applyLandingEffect가 onGround를 곧바로 내리므로 여전히 공중이다
+    const s = createGameState(defaultModifiers())
+    s.platforms = [makePlatform(1, 0, 0, C.LOGICAL_W, 'spring')]
+    s.highestGeneratedY = 0
+    s.player.y = 20
+    s.player.prevY = 20
+    s.player.vy = -100
+    s.player.onGround = false
+    s.standingOnId = null
+    s.heldQuiz = { platformY: 777 }
+
+    for (let i = 0; i < 7; i++) stepGame(s, NONE, deps())
+
+    expect(s.player.vy).toBeGreaterThan(C.JUMP_V)   // 실제로 튕겨 올랐다
+    expect(s.player.onGround).toBe(false)
+    expect(s.pendingQuiz).toBeNull()
+    expect(s.heldQuiz).toEqual({ platformY: 777 })
+  })
+})

@@ -53,7 +53,14 @@ export interface GameState {
   nextPlatformId: number
   highestGeneratedY: number
   paused: boolean
+  /** 지금 띄워야 할 퀴즈. main이 이 값만 보고 모달을 연다 */
   pendingQuiz: { platformY: number } | null
+  /**
+   * 공중에서 주워 착지를 기다리는 퀴즈. 점프 도중 모달을 띄우면 풀고 나왔을 때
+   * 플레이어가 공중 한복판에 놓여 자기가 어디로 향하던 중이었는지 다시 파악해야
+   * 한다 — 그래서 발이 땅에 닿을 때까지 미룬다. 한 번에 하나만 들 수 있다.
+   */
+  heldQuiz: { platformY: number } | null
   standingOnId: number | null
 }
 
@@ -148,6 +155,7 @@ export function createGameState(mods: RunModifiers): GameState {
     highestGeneratedY: baseY,
     paused: false,
     pendingQuiz: null,
+    heldQuiz: null,
     standingOnId: 0,
   }
 }

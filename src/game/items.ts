@@ -67,6 +67,10 @@ export function collectItems(state: GameState): void {
     const kind = plat.item
     const amount = plat.itemAmount
 
+    // 이미 퀴즈를 하나 들고 있으면 두 번째 물음표는 줍지 않고 발판에 남겨둔다.
+    // 들 수 있는 건 하나뿐이라, 주워버리면 조용히 사라지는 셈이 된다.
+    if (kind === 'quiz' && state.heldQuiz !== null) continue
+
     // 먼저 비워야 같은 프레임에 두 번 처리되지 않는다
     plat.item = null
     plat.itemAmount = 0
@@ -77,11 +81,15 @@ export function collectItems(state: GameState): void {
       state.run.coins += amount
     } else if (kind === 'food') {
       grantFood(state.run, 1)
-    } else {
-      // 물음표 — 게임을 멈추고 퀴즈를 예약한다
+    } else if (state.player.onGround) {
+      // 물음표를 땅에서 주웠다 — 바로 멈추고 퀴즈를 예약한다
       state.pendingQuiz = { platformY: plat.y }
       state.paused = true
       return    // 일시정지했으므로 나머지는 다음에 줍는다
+    } else {
+      // 공중이다 — 착지할 때까지 들고만 있는다. 멈추지 않으므로 이번 프레임의
+      // 나머지 아이템도 계속 줍는다. 승격은 update.ts가 착지 판정 뒤에 한다.
+      state.heldQuiz = { platformY: plat.y }
     }
   }
 }

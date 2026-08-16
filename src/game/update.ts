@@ -50,6 +50,16 @@ export function stepGame(state: GameState, input: InputState, deps: UpdateDeps):
   }
 
   collectItems(state)
+
+  // 공중에서 주워 들고 있던 퀴즈는 발이 땅에 닿는 순간 띄운다. 착지 판정과
+  // 부서진 발판 처리가 모두 끝난 뒤라 onGround는 이번 스텝의 최종값이다 —
+  // 스프링으로 즉시 튕겨 나갔다면 아직 공중이므로 다음 착지까지 계속 기다린다.
+  if (state.heldQuiz !== null && state.pendingQuiz === null && state.player.onGround) {
+    state.pendingQuiz = state.heldQuiz
+    state.heldQuiz = null
+    state.paused = true
+  }
+
   if (state.paused) return    // 퀴즈가 떴다 — 이번 스텝은 여기서 끝낸다
 
   updateCamera(state)

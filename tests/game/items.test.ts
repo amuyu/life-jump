@@ -160,12 +160,51 @@ describe('collectItems', () => {
     expect(s.run.coins).toBe(C.FOOD_TO_COIN)
   })
 
-  it('물음표는 퀴즈를 예약하고 일시정지시킨다', () => {
+  it('땅에서 주운 물음표는 즉시 퀴즈를 예약하고 일시정지시킨다', () => {
     const s = pickupScene('quiz')
+    expect(s.player.onGround).toBe(true)   // 이 테스트가 지상 경로임을 못박는다
     collectItems(s)
     expect(s.pendingQuiz).toEqual({ platformY: 200 })
+    expect(s.heldQuiz).toBeNull()
     expect(s.paused).toBe(true)
     expect(s.platforms[0]!.item).toBeNull()
+  })
+
+  it('공중에서 주운 물음표는 들고만 있고 게임을 멈추지 않는다', () => {
+    // 점프 도중 모달이 뜨면 풀고 나왔을 때 공중 한복판이라 당황스럽다.
+    // 줍기는 하되(아이템은 사라진다) 띄우는 건 착지까지 미룬다.
+    const s = pickupScene('quiz')
+    s.player.onGround = false
+    collectItems(s)
+    expect(s.heldQuiz).toEqual({ platformY: 200 })
+    expect(s.pendingQuiz).toBeNull()
+    expect(s.paused).toBe(false)
+    expect(s.platforms[0]!.item).toBeNull()
+  })
+
+  it('퀴즈를 들고 있으면 두 번째 물음표는 발판에 그대로 남는다', () => {
+    // 들 수 있는 건 하나뿐이라, 주워버리면 조용히 사라지는 셈이 된다
+    const s = pickupScene('quiz')
+    s.player.onGround = false
+    s.heldQuiz = { platformY: 999 }
+    collectItems(s)
+    expect(s.heldQuiz).toEqual({ platformY: 999 })   // 먼저 든 것이 유지된다
+    expect(s.pendingQuiz).toBeNull()
+    expect(s.platforms[0]!.item).toBe('quiz')        // 소비되지 않았다
+  })
+
+  it('공중이어도 실·코인·음식은 그대로 즉시 처리된다', () => {
+    for (const [kind, check] of [
+      ['thread', (s: ReturnType<typeof pickupScene>) => expect(s.run.thread).toBe(1)],
+      ['coin', (s: ReturnType<typeof pickupScene>) => expect(s.run.coins).toBe(1)],
+    ] as const) {
+      const s = pickupScene(kind)
+      s.player.onGround = false
+      collectItems(s)
+      check(s)
+      expect(s.paused).toBe(false)
+      expect(s.platforms[0]!.item).toBeNull()
+    }
   })
 
   it('멀리 있는 아이템은 줍지 않는다', () => {
