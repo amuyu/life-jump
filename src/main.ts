@@ -4,6 +4,9 @@ import { createRenderer } from './render/drawGame'
 import { drawHud } from './render/drawHud'
 import { createLoop } from './core/loop'
 import { createInput } from './core/input'
+import { createTouch } from './core/touch'
+import { mountTouchOverlay, type MountedTouchOverlay } from './ui/touchOverlay'
+import { setSwipeBack } from './toss/screen'
 import { createRng } from './core/rng'
 import { loadSave, writeSave, CONSUMABLE_MAX, type SaveData } from './core/storage'
 import { createGameState, type GameState, type RunState } from './game/state'
@@ -37,6 +40,12 @@ root.appendChild(uiLayer)
 const screen = createScreen(gameLayer)
 const loop = createLoop()
 const input = createInput()
+// 터치 컨트롤러는 판 중에만 gameLayer 에 붙는다. 존 경계는 gameLayer 폭(= 뷰포트 폭)의 절반.
+const touch = createTouch(input, () => ({ width: gameLayer.clientWidth }))
+let detachTouch: (() => void) | null = null
+let overlay: MountedTouchOverlay | null = null
+// 안내를 이미 내렸으면 매 프레임 dismissHint 를 부르지 않기 위한 로컬 플래그 (dismissHint 자체도 멱등)
+let hintDismissed = false
 
 let save: SaveData = loadSave({ outfits: OUTFIT_IDS, consumables: CONSUMABLE_IDS })
 const renderer = createRenderer(screen, save.equippedOutfit)
@@ -61,10 +70,23 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) {
     loop.reset()
     input.reset()
+    // reset 이 아니라 clear — 숨겨진 동안 OS 가 터치를 가져갔다. 추적 중이던 포인터는
+    // 전부 stale 이고 up 이 안 올 수 있다. 늦게 오더라도 목록에 없어 무시된다.
+    touch.clear()
   }
 })
 
 const persist = (): void => { writeSave(save) }
+
+// 판을 떠날 때의 정리 — 판 중이 아닐 때 불려도 안전하도록 null 가드로 멱등하게 둔다.
+// detach 가 내부에서 clear 하므로 눌린 채 끝난 손가락이 다음 판의 존을 점유하지 않는다.
+function leaveRun(): void {
+  detachTouch?.()
+  detachTouch = null
+  overlay?.unmount()
+  overlay = null
+  void setSwipeBack(true)
+}
 
 function render(): void {
   // 결과 화면은 셸(탭바/재화) 없이, 마지막으로 그려진 게임 프레임 위에 뜨는
@@ -170,6 +192,7 @@ function render(): void {
 // state를 항상 비운다. 그래야 나중에 어떤 경로가 판 도중 이 함수를 부르더라도
 // 화면 아래에서 루프가 조용히 계속 돌지 않는다.
 function goToLobby(): void {
+  leaveRun()
   state = null
   tab = 'lobby'
   showingLoadout = false
@@ -178,6 +201,7 @@ function goToLobby(): void {
 }
 
 function enterLoadout(): void {
+  leaveRun()
   state = null
   tab = 'lobby'
   showingLoadout = true
@@ -197,6 +221,17 @@ function startRun(): void {
   uiLayer.innerHTML = ''
   gameLayer.classList.remove('hidden')
 
+  detachTouch = touch.attach(gameLayer)   // 내부에서 clear — touch.reset() 은 따로 부르지 않는다
+  hintDismissed = false
+  overlay = mountTouchOverlay(gameLayer, touch, {
+    showHint: !save.controlsHintSeen,
+    onHintDone() {
+      save.controlsHintSeen = true
+      persist()
+    },
+  })
+  void setSwipeBack(false)
+
   loop.reset()
   input.reset()
   lastTime = performance.now()
@@ -208,6 +243,7 @@ function finishRun(run: GameState['run']): void {
 
   // gameLayer는 일부러 숨기지 않는다 — 결과 화면은 마지막으로 그려진 프레임
   // 위에 뜨는 모달이다. render()가 lastResult를 보고 셸을 건너뛴다.
+  leaveRun()
   state = null
   lastResult = { run, isNewBest }
   render()
@@ -235,6 +271,7 @@ function openQuiz(current: GameState): void {
     current.paused = false
     loop.reset()      // accumulator 폐기 — 없으면 시간이 순간이동한다
     input.reset()     // 키 상태 초기화 — 모달에서 누른 Space가 점프로 이어지지 않는다
+    touch.reset()     // 손가락은 아직 화면에 있다 — suppressed 로 두고 액션만 해제 (순서 무관)
     lastTime = performance.now()
     quizOpen = false
   })
@@ -247,6 +284,14 @@ function frame(now: number): void {
   lastTime = now
 
   if (state !== null) {
+    if (overlay !== null && !hintDismissed) {
+      const s = input.snapshot()
+      if (s.left || s.right || s.jumpHeld || s.jumpPressed) {
+        hintDismissed = true
+        overlay.dismissHint()
+      }
+    }
+
     if (state.pendingQuiz !== null && !quizOpen) {
       openQuiz(state)
     }
