@@ -26,7 +26,7 @@
 
 - 서버, 계정, 온라인 리더보드 — 저장은 전적으로 localStorage
 - 사운드/BGM
-- 모바일 터치 조작 (키보드 전용)
+- ~~모바일 터치 조작~~ → `2026-08-17-touch-controls-design.md` 에서 해제
 - 적, 발사체, 보스
 - 다국어 지원 (한국어 전용)
 
@@ -587,7 +587,8 @@ src/
 
   core/
     loop.ts             고정 타임스텝 루프
-    input.ts            키보드 상태 추적
+    input.ts            키보드·터치 소스 상태 추적 (OR 합산)
+    touch.ts            Pointer Events → 존/조이스틱 판정 (터치 스펙 4절)
     rng.ts              시드 가능한 난수 (테스트 재현성)
     storage.ts          저장/로드 + 마이그레이션 + 손상 복구
 
@@ -617,7 +618,11 @@ src/
     shop.ts             상점
     loadout.ts          판 시작 전 소모품 장착 화면
     quizModal.ts        퀴즈 모달
+    touchOverlay.ts / touchHint.ts   터치 글리프·첫 판 안내
     styles.css
+
+  toss/
+    screen.ts           앱인토스 SDK 래퍼 (스와이프백)
 ```
 
 로비·상점·옷장·퀴즈 UI를 캔버스가 아니라 **DOM**으로 만든다. 버튼, 스크롤, 호버,

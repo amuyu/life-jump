@@ -33,6 +33,7 @@ src/
   render/        canvas, sprites, drawGame, drawHud, pixelmaps
   ui/            DOM UI — shell(탭바), lobby, shop, wardrobe, loadout, records, result, quizModal
   core/          loop(고정 타임스텝), input(키보드), storage(세이브), rng(시드 난수)
+  toss/          앱인토스 SDK 래퍼 (screen.ts: 스와이프백). SDK 미설치 환경에서는 no-op
   data/          outfits, shop, pixelmaps, quiz.json
 ```
 
@@ -49,6 +50,15 @@ src/
 `src/core/storage.ts`의 `parseSave()`는 5단계 고정:
 파싱 → 버전별 순차 `migrate()` → 기본값과 깊은 병합 → 유효성 검증·보정 → 재저장(`loadSave`).
 스키마를 바꿀 때는 `SAVE_VERSION`을 올리고 `migrate()`에 단계를 추가한다. 순수 추가 필드라도 version만 전진시켜 다음 마이그레이션의 이어받을 지점을 남긴다.
+
+### 입력 소스 규약
+
+- 키보드와 터치는 `core/input.ts` 안에서 소스별 상태를 가지며 스냅샷에서 OR 된다. 새 입력 소스는
+  `press/release(action, source)` 를 부르는 얇은 층으로 붙인다 — `InputState` 는 바꾸지 않는다.
+- 터치 판정 상수(`DEAD`, `FOLLOW`)는 `core/touch.ts` 상단. `FOLLOW > DEAD` 불변식.
+- 모달을 닫을 때는 `input.reset()` + `touch.reset()`, 페이지 복귀·판 종료에는 `touch.clear()`
+  (detach 가 대신 부른다). 둘을 바꿔 쓰면 죽은 손가락이 존을 영구 점유하거나 첫 점프를 먹는다.
+- 설계: `docs/superpowers/specs/2026-08-17-touch-controls-design.md`
 
 ---
 
@@ -239,7 +249,7 @@ SUPABASE_SERVICE_ROLE_KEY               # 자동 주입
 
 | 영역 | 현재 | 이식 시 필요한 것 |
 |---|---|---|
-| **입력** | `core/input.ts`가 키보드 전용 (`handleKeyDown/Up`, `input.attach(window, …)`) | 토스는 모바일 WebView 단독. 터치 입력(좌/우/점프) 경로 추가 — `InputState` 인터페이스는 그대로 두고 저수준 진입점만 늘리면 됨 |
+| **입력** | `core/input.ts`가 키보드 전용 (`handleKeyDown/Up`, `input.attach(window, …)`) | 완료 — 터치 스펙 참조. 실기기 검증(9절 체크리스트) 남음 |
 | **화면 맞춤** | `render/canvas.ts`가 정수 배율만 사용 (`Math.floor`) | 세로 모바일에서 여백이 크게 남을 수 있음. safe-area·노치 대응 확인 필요 |
 | **빌드** | 순수 Vite (`vite build`) | `granite.config.ts` + `ait build`/`ait deploy`로 전환. `web.commands`에 기존 vite 커맨드를 위임 |
 | **SDK 호출부** | 없음 | React 훅이 아니므로 싱글턴 모듈(`src/toss/*`)로 작성. `game/`·`render/` 계층에는 절대 넣지 않는다 (architecture.test.ts 경계 유지) |
