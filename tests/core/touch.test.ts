@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createInput } from '../../src/core/input'
-import { createTouch, type TouchSnapshot } from '../../src/core/touch'
+import { createTouch, type TouchSnapshot, DEAD, FOLLOW } from '../../src/core/touch'
 
 const W = 400              // 존 경계는 200
 const LEFT_X = 100         // 이동 존
@@ -113,5 +113,98 @@ describe('createTouch — 스냅샷', () => {
     off()
     ev('down', 1, RIGHT_X)
     expect(cb).not.toHaveBeenCalled()
+  })
+})
+
+describe('createTouch — 상대 조이스틱', () => {
+  it('상수 불변식: FOLLOW > DEAD', () => {
+    expect(FOLLOW).toBeGreaterThan(DEAD)
+  })
+
+  it('down 직후는 정지, DEAD 안에서는 정지', () => {
+    const { input, ev } = setup()
+    ev('down', 1, LEFT_X)
+    expect(input.snapshot().left).toBe(false)
+    expect(input.snapshot().right).toBe(false)
+    ev('move', 1, LEFT_X + DEAD - 1)
+    expect(input.snapshot().right).toBe(false)
+  })
+
+  it('경계 포함 — 정확히 DEAD 만큼 밀면 방향이 선다', () => {
+    const { input, ev } = setup()
+    ev('down', 1, LEFT_X)
+    ev('move', 1, LEFT_X + DEAD)
+    expect(input.snapshot().right).toBe(true)
+    ev('move', 1, LEFT_X - DEAD)
+    expect(input.snapshot().right).toBe(false)
+    expect(input.snapshot().left).toBe(true)
+  })
+
+  it('한 방향으로 계속 밀어 anchor가 따라온 뒤 손가락을 멈춰도 방향이 유지된다', () => {
+    const { input, ev, snaps } = setup()
+    ev('down', 1, LEFT_X)
+    ev('move', 1, LEFT_X + 80)
+    expect(input.snapshot().right).toBe(true)
+    // anchor 는 손가락에서 정확히 FOLLOW 뒤에 있다
+    expect(snaps.at(-1)?.moveAnchor?.x).toBe(LEFT_X + 80 - FOLLOW)
+    ev('move', 1, LEFT_X + 80)      // 같은 자리 — 멈춤
+    expect(input.snapshot().right).toBe(true)
+  })
+
+  it('반전 거리는 정확히 FOLLOW + DEAD — 그보다 1px 덜 가면 정지, 딱 그만큼이면 반대 방향', () => {
+    const { input, ev } = setup()
+    ev('down', 1, LEFT_X)
+    ev('move', 1, LEFT_X + 80)                              // 오른쪽, anchor = finger − FOLLOW
+    const finger = LEFT_X + 80
+    ev('move', 1, finger - (FOLLOW + DEAD - 1))            // 35px 되돌림 → 아직 정지
+    expect(input.snapshot().right).toBe(false)
+    expect(input.snapshot().left).toBe(false)
+    ev('move', 1, finger - (FOLLOW + DEAD))                // 36px → 왼쪽
+    expect(input.snapshot().left).toBe(true)
+  })
+
+  it('press/release는 dir이 바뀔 때만 불린다', () => {
+    const { input, ev } = setup()
+    const press = vi.spyOn(input, 'press')
+    const release = vi.spyOn(input, 'release')
+    ev('down', 1, LEFT_X)
+    ev('move', 1, LEFT_X + 20)
+    ev('move', 1, LEFT_X + 21)
+    ev('move', 1, LEFT_X + 22)
+    expect(press).toHaveBeenCalledTimes(1)
+    expect(press).toHaveBeenCalledWith('right', 'touch')
+    ev('up', 1, LEFT_X + 22)
+    expect(release).toHaveBeenCalledTimes(1)
+    expect(release).toHaveBeenCalledWith('right', 'touch')
+  })
+
+  it('up/cancel은 현재 방향을 해제한다', () => {
+    const { input, ev } = setup()
+    ev('down', 1, LEFT_X)
+    ev('move', 1, LEFT_X - 30)
+    expect(input.snapshot().left).toBe(true)
+    ev('cancel', 1, LEFT_X - 30)
+    expect(input.snapshot().left).toBe(false)
+  })
+
+  it('이동 존에 활성 포인터가 있으면 두 번째 포인터는 무시된다', () => {
+    const { input, ev } = setup()
+    ev('down', 1, LEFT_X)
+    ev('down', 2, LEFT_X + 50)
+    ev('move', 2, LEFT_X + 100)      // 무시된 포인터 — 방향에 영향 없음
+    expect(input.snapshot().right).toBe(false)
+  })
+
+  it('스냅샷의 moveDir/moveAnchor/movePoint가 판정과 일치한다', () => {
+    const { ev, snaps } = setup()
+    ev('down', 1, LEFT_X, 420)
+    ev('move', 1, LEFT_X + 15, 425)
+    expect(snaps.at(-1)).toMatchObject({
+      moveDir: 1,
+      moveAnchor: { x: LEFT_X, y: 420 },
+      movePoint: { x: LEFT_X + 15, y: 425 },
+    })
+    ev('up', 1, LEFT_X + 15, 425)
+    expect(snaps.at(-1)).toMatchObject({ moveDir: 0, moveAnchor: null, movePoint: null })
   })
 })

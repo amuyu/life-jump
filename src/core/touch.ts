@@ -119,7 +119,16 @@ export function createTouch(input: Input, layout: () => { width: number }): Touc
     if (t === undefined || t.suppressed || t.zone !== 'move') return
     t.x = e.clientX
     t.y = e.clientY
-    // 조이스틱 판정은 Task 3 에서 채운다
+
+    // 따라오는 중심 — |dx| 가 FOLLOW 를 넘으면 anchor 를 손가락 뒤 FOLLOW 지점으로 끌어온다.
+    // 그래서 한 방향으로 아무리 밀어도 dx 는 ±FOLLOW 에 머물고, 반전에는 FOLLOW + DEAD 만 필요하다.
+    let dx = t.x - t.anchorX
+    if (dx > FOLLOW) { t.anchorX = t.x - FOLLOW; dx = FOLLOW }
+    else if (dx < -FOLLOW) { t.anchorX = t.x + FOLLOW; dx = -FOLLOW }
+
+    // 경계 포함 — 경계에 닿는 순간 반응해야 반전 거리가 정확히 FOLLOW + DEAD 가 된다
+    const next: Dir = dx >= DEAD ? 1 : dx <= -DEAD ? -1 : 0
+    setDir(t, next)
     publish()
   }
 
