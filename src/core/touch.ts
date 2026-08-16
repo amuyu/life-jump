@@ -148,7 +148,7 @@ export function createTouch(input: Input, layout: () => { width: number }): Touc
   }
 
   const reset = (): void => {
-    // Task 4 で suppressed 規則で変わる
+    // Task 4 에서 suppressed 규칙으로 바꾼다
     clear()
   }
 
@@ -158,7 +158,7 @@ export function createTouch(input: Input, layout: () => { width: number }): Touc
   }
 
   const attach = (_el: TouchTarget): (() => void) => {
-    throw new Error('attach は Task 5 で実装する')
+    throw new Error('attach 는 Task 5 에서 구현한다')
   }
 
   return { attach, reset, clear, subscribe, handlePointer }
