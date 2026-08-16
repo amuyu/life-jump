@@ -208,3 +208,74 @@ describe('createTouch — 상대 조이스틱', () => {
     expect(snaps.at(-1)).toMatchObject({ moveDir: 0, moveAnchor: null, movePoint: null })
   })
 })
+
+describe('createTouch — reset() (모달용, suppressed)', () => {
+  it('reset은 액션을 해제하지만 손가락은 존을 계속 점유한다', () => {
+    const { input, touch, ev } = setup()
+    ev('down', 1, RIGHT_X); input.consume()
+    ev('down', 2, LEFT_X); ev('move', 2, LEFT_X + 30)
+    touch.reset()
+    expect(input.snapshot().jumpHeld).toBe(false)
+    expect(input.snapshot().right).toBe(false)
+
+    // suppressed 손가락이 떠 있는 동안 같은 존의 새 down 은 무시된다
+    ev('down', 3, RIGHT_X)
+    expect(input.snapshot().jumpPressed).toBe(false)
+    ev('down', 4, LEFT_X); ev('move', 4, LEFT_X + 30)
+    expect(input.snapshot().right).toBe(false)
+  })
+
+  it('suppressed 손가락의 move는 무시되고 up은 제거만 한다 — 그 뒤 새 down은 정상 엣지', () => {
+    const { input, touch, ev } = setup()
+    ev('down', 1, RIGHT_X); input.consume()
+    touch.reset()
+    ev('move', 1, RIGHT_X + 5)
+    expect(input.snapshot().jumpHeld).toBe(false)
+    ev('up', 1, RIGHT_X + 5)
+    expect(input.snapshot().jumpHeld).toBe(false)     // 없던 액션을 해제하지 않는다
+    ev('down', 2, RIGHT_X)
+    expect(input.snapshot().jumpPressed).toBe(true)
+  })
+
+  it('reset 뒤 이동 존 suppressed 손가락은 스냅샷에서 사라진다', () => {
+    const { touch, ev, snaps } = setup()
+    ev('down', 1, LEFT_X); ev('move', 1, LEFT_X + 30)
+    touch.reset()
+    expect(snaps.at(-1)).toMatchObject({ moveDir: 0, moveAnchor: null, movePoint: null, jumpActive: false })
+  })
+
+  it('input.reset()과 touch.reset()의 순서는 결과에 영향이 없다', () => {
+    const run = (first: 'input' | 'touch') => {
+      const { input, touch, ev } = setup()
+      ev('down', 1, RIGHT_X); ev('down', 2, LEFT_X); ev('move', 2, LEFT_X - 40)
+      input.handleKeyDown('Space')
+      input.consume()
+      if (first === 'input') { input.reset(); touch.reset() } else { touch.reset(); input.reset() }
+      // 키보드는 실제 keyup 까지 막힌다, 터치는 새 손가락으로 바로 엣지
+      input.handleKeyDown('Space')
+      const afterKb = input.snapshot()
+      ev('up', 1, RIGHT_X)               // 죽은 손가락 제거
+      ev('down', 3, RIGHT_X)
+      const afterTouch = input.snapshot()
+      return { afterKb, afterTouch }
+    }
+    const a = run('input')
+    const b = run('touch')
+    expect(a.afterKb).toEqual({ left: false, right: false, jumpHeld: false, jumpPressed: false })
+    expect(b.afterKb).toEqual(a.afterKb)
+    expect(a.afterTouch.jumpPressed).toBe(true)
+    expect(b.afterTouch).toEqual(a.afterTouch)
+  })
+
+  it('clear는 suppressed 포인터도 지운다', () => {
+    const { input, touch, ev } = setup()
+    ev('down', 1, RIGHT_X)
+    input.consume()               // 첫 down 의 엣지를 지운다 — 안 지우면 새 down 이 무시돼도 통과한다
+    touch.reset()
+    touch.clear()
+    expect(input.snapshot().jumpHeld).toBe(false)
+    ev('down', 2, RIGHT_X)
+    expect(input.snapshot().jumpPressed).toBe(true)
+    expect(input.snapshot().jumpHeld).toBe(true)
+  })
+})

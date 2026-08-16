@@ -157,8 +157,16 @@ export function createTouch(input: Input, layout: () => { width: number }): Touc
   }
 
   const reset = (): void => {
-    // Task 4 에서 suppressed 규칙으로 바꾼다
-    clear()
+    // 손가락은 아직 화면에 있다 — 삭제하지 않고 죽은 손가락으로 표시한다. 존은 계속
+    // 점유되므로 그 손가락이 떠 있는 동안 같은 존의 새 down 은 무시되고, 실제 up 후
+    // 다음 down 이 진짜 엣지가 된다. 키보드의 kbJumpBlocked 와 같은 체감이지만
+    // 메커니즘은 존 점유다.
+    for (const t of pointers.values()) {
+      releaseActions(t)
+      t.suppressed = true
+      t.dir = 0
+    }
+    publish()
   }
 
   const subscribe = (cb: (s: TouchSnapshot) => void): (() => void) => {
