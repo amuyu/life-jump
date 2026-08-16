@@ -256,3 +256,33 @@ describe('loadSave — 5단계 재저장', () => {
     expect(() => loadSave(VALID)).not.toThrow()
   })
 })
+
+describe('parseSave — v3 controlsHintSeen', () => {
+  it('기본값은 false 다', () => {
+    expect(defaultSave().controlsHintSeen).toBe(false)
+    expect(SAVE_VERSION).toBe(3)
+  })
+
+  it('controlsHintSeen 없는 v2 저장이 나머지를 초기화하지 않고 병합된다', () => {
+    const v2 = JSON.stringify({
+      version: 2,
+      bestHeight: 1200, totalRuns: 3, thread: 7, coins: 40,
+      ownedOutfits: [DEFAULT_OUTFIT_ID], equippedOutfit: DEFAULT_OUTFIT_ID,
+      upgrades: { jump: 1, energy: 0, air: 0, magnet: 0 },
+      consumables: { rocket: 0, feather: 1, cushion: 0, doubleJump: 0 },
+      selectedConsumables: [], seenQuizIds: ['q1'], recentRuns: [1200],
+    })
+    const out = parseSave(v2, VALID)
+    expect(out.version).toBe(SAVE_VERSION)
+    expect(out.controlsHintSeen).toBe(false)
+    expect(out.bestHeight).toBe(1200)
+    expect(out.recentRuns).toEqual([1200])
+    expect(out.seenQuizIds).toEqual(['q1'])
+  })
+
+  it('true 는 보존되고 불리언이 아니면 false 다', () => {
+    expect(parseSave(JSON.stringify({ version: SAVE_VERSION, controlsHintSeen: true }), VALID).controlsHintSeen).toBe(true)
+    expect(parseSave(JSON.stringify({ version: SAVE_VERSION, controlsHintSeen: 'yes' }), VALID).controlsHintSeen).toBe(false)
+    expect(parseSave(JSON.stringify({ version: SAVE_VERSION, controlsHintSeen: 1 }), VALID).controlsHintSeen).toBe(false)
+  })
+})

@@ -1,5 +1,5 @@
 export const SAVE_KEY = 'life-jump-save-v1'
-export const SAVE_VERSION = 2
+export const SAVE_VERSION = 3
 export const DEFAULT_OUTFIT_ID = 'basic-tee'
 
 /** 최근 플레이 차트의 막대 개수와 같아야 한다. */
@@ -33,6 +33,8 @@ export interface SaveData {
   seenQuizIds: string[]
   /** 최근 판의 maxHeight (px), 오래된 것이 앞. 최대 RECENT_RUNS_MAX개 */
   recentRuns: number[]
+  /** 첫 판 조작 안내를 이미 보여줬는가 (터치/키보드 공통) */
+  controlsHintSeen: boolean
 }
 
 export interface ValidIds {
@@ -54,6 +56,7 @@ export function defaultSave(): SaveData {
     selectedConsumables: [],
     seenQuizIds: [],
     recentRuns: [],
+    controlsHintSeen: false,
   }
 }
 
@@ -95,6 +98,12 @@ function migrate(raw: Record<string, unknown>): Record<string, unknown> {
   // 번호만 전진시켜 다음 마이그레이션이 이어받을 지점을 남긴다.
   if ((cur['version'] as number) < 2) {
     cur = { ...cur, version: 2 }
+  }
+
+  // v2 → v3: controlsHintSeen 필드 추가. 순수 추가 필드라 3단계 병합이 기본값(false)을
+  // 채워준다 — version 번호만 전진시킨다.
+  if ((cur['version'] as number) < 3) {
+    cur = { ...cur, version: 3 }
   }
 
   return cur
@@ -147,6 +156,7 @@ export function parseSave(raw: string | null, valid: ValidIds): SaveData {
     selectedConsumables: strArray(migrated['selectedConsumables']),
     seenQuizIds: strArray(migrated['seenQuizIds']),
     recentRuns: numArray(migrated['recentRuns'], Number.MAX_SAFE_INTEGER, RECENT_RUNS_MAX),
+    controlsHintSeen: migrated['controlsHintSeen'] === true,
   }
 
   // 4단계: 유효성 검증·보정
