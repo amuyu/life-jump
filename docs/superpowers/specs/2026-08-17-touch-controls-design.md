@@ -183,14 +183,15 @@ const FOLLOW = 24   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 - `down`: `anchor = (clientX, clientY)`, `dir = 0`.
 - `move`: `dx = clientX − anchor.x`.
   - `|dx| > FOLLOW` 이면 `anchor.x = clientX − sign(dx) · FOLLOW` (항상 `|dx| ≤ FOLLOW`).
-  - `dx > DEAD` → 1, `dx < −DEAD` → −1, 아니면 0.
+  - `dx >= DEAD` → 1, `dx <= −DEAD` → −1, 아니면 0. (경계 포함 — 경계에 닿는 순간 반응해야
+    반전 거리가 정확히 `FOLLOW + DEAD` 가 된다. 엄격 부등호면 36px 에서 중립, 37px 에서 반전.)
   - `dir` 이 바뀔 때만: 이전 dir 의 액션 `release`, 새 dir 의 액션 `press`. 매 move 마다 부르지 않는다.
 - `up`/`cancel`: 현재 dir 액션 `release`, 포인터 상태 삭제, `dir = 0`.
 
 **거리 성질** (테스트가 이 수치를 고정한다):
 - 한 방향으로 계속 밀면 anchor 가 따라와 `dx = ±FOLLOW` 에 머문다. `FOLLOW > DEAD` 이므로 손가락을
   **멈춰도 방향이 유지**된다. `FOLLOW ≤ DEAD` 로 두면 멈추는 순간 정지해 버린다 — 그래서 하한 제약.
-- 반전: anchor 가 `finger − FOLLOW` 에 있는 상태에서 왼쪽 판정(`dx < −DEAD`)까지 손가락이 가야 하는
+- 반전: anchor 가 `finger − FOLLOW` 에 있는 상태에서 왼쪽 판정(`dx <= −DEAD`)까지 손가락이 가야 하는
   거리는 `FOLLOW + DEAD = 36px`. (24/12 는 시작값. 실기기에서 둔하면 FOLLOW 를 줄인다 — 단 DEAD 초과 유지.)
 
 ### 4.4 점프 존 — 홀드 버튼
@@ -386,7 +387,7 @@ frame:
 - 존: `W/2` 기준 down 시점 고정. 이동 존에서 시작한 손가락이 경계를 넘어도 점프가 안 된다.
 - 조이스틱: 데드존 안 정지, `DEAD` 초과 시 방향, 한 방향으로 계속 밀어 anchor 가 따라온 뒤
   **손가락을 멈춰도 방향 유지**, 그 상태에서 반대로 `FOLLOW+DEAD` (36px) 되돌리면 반전 —
-  `FOLLOW+DEAD−1` 에서는 아직 정지(0).
+  `FOLLOW+DEAD−1` (35px) 에서는 아직 정지(0), 정확히 `FOLLOW+DEAD` (36px) 에서 −1 (경계 포함 부등호 검증).
 - press/release 는 dir 변화 시에만 호출된다 (스파이 호출 횟수). 모두 `source === 'touch'`.
 - 점프: down = 엣지 + held, up = held 해제. 활성 포인터가 있는 동안 두 번째 포인터 down = 무시.
 - 공중 재down(같은 포인터 up 후 down) = 두 번째 엣지.
