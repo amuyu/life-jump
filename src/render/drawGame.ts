@@ -210,8 +210,6 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
   const drawPlatforms = (state: GameState): void => {
     const ctx = screen.ctx
     for (const p of state.platforms) {
-      if (p.dead) continue
-
       const sy = Math.round(C.LOGICAL_H - (p.y - state.camera.y))
       if (sy < -C.PLATFORM_THICKNESS || sy > C.LOGICAL_H) continue
 
@@ -219,8 +217,15 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
       const tw = mapSize(PLATFORM_MAPS[p.kind]).w
       const x0 = Math.round(p.x)
 
-      // 곧 부서지는 발판은 깜빡인다
-      if (p.crumbleAt !== null) {
+      if (p.dead) {
+        // 되살아나는 중 — 남은 시간에 비례해 진해진다. 아무것도 안 그리면
+        // 막힌 플레이어가 기다릴 이유를 알 수 없다. crumbleAt은 파괴 시각이다.
+        const progress = p.crumbleAt === null
+          ? 0
+          : Math.min(1, (state.run.time - p.crumbleAt) / C.CRUMBLE_RESPAWN)
+        ctx.globalAlpha = 0.15 + 0.45 * progress
+      } else if (p.crumbleAt !== null) {
+        // 곧 부서지는 발판은 깜빡인다
         ctx.globalAlpha = 0.4 + 0.6 * Math.abs(Math.sin(state.run.time * 25))
       }
 
@@ -231,7 +236,8 @@ export function createRenderer(screen: Screen, outfitId: string): Renderer {
       }
       ctx.globalAlpha = 1
 
-      if (p.item !== null) {
+      // 부서진 발판의 아이템은 collectItems도 건너뛴다 — 되살아날 때 같이 돌아온다
+      if (p.item !== null && !p.dead) {
         const sprite = itemSprite(p.item)
         const { w, h } = mapSize(ITEM_MAPS[p.item])
         const bob = Math.round(Math.sin(state.run.time * 3 + p.id) * 1.5)

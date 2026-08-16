@@ -416,3 +416,49 @@ describe('stepGame — 공중에서 주운 퀴즈는 착지할 때 뜬다', () =
     expect(s.heldQuiz).toEqual({ platformY: 777 })
   })
 })
+
+describe('stepGame — 되살아난 발판에 다시 오를 수 있다', () => {
+  it('부서져 막혔던 길이 되살아난 뒤 실제로 착지로 이어진다', () => {
+    // 이 기능의 존재 이유를 그대로 재현한다: 부서지는 발판 하나가 위아래를 잇는
+    // 유일한 통로였고, 그것이 사라지면 영구히 막힌다.
+    const s = createGameState(defaultModifiers())
+    const crumble = makePlatform(1, 0, 100, C.LOGICAL_W, 'crumble')
+    s.platforms = [crumble]
+    s.highestGeneratedY = 100
+
+    // 밟아서 부순다
+    s.player.y = 130
+    s.player.prevY = 130
+    s.player.vy = -100
+    s.player.onGround = false
+    s.standingOnId = null
+    for (let i = 0; i < 40; i++) stepGame(s, NONE, deps())
+    expect(crumble.dead).toBe(true)
+
+    // 부서진 동안에는 통과해버린다 — 착지 대상이 아니다
+    s.player.y = 130
+    s.player.prevY = 130
+    s.player.vy = -100
+    s.player.onGround = false
+    s.standingOnId = null
+    for (let i = 0; i < 10; i++) stepGame(s, NONE, deps())
+    expect(s.player.onGround).toBe(false)
+    expect(s.player.y).toBeLessThan(100)   // 발판을 뚫고 내려갔다
+
+    // 시간이 지나 되살아난다
+    s.run.time += C.CRUMBLE_RESPAWN
+    stepGame(s, NONE, deps())
+    expect(crumble.dead).toBe(false)
+
+    // 이제 다시 착지할 수 있다
+    s.player.y = 130
+    s.player.prevY = 130
+    s.player.vy = -100
+    s.player.onGround = false
+    s.standingOnId = null
+    let steps = 0
+    while (!s.player.onGround && steps < 40) { stepGame(s, NONE, deps()); steps++ }
+    expect(s.player.onGround).toBe(true)
+    expect(s.player.y).toBe(100)
+  })
+})

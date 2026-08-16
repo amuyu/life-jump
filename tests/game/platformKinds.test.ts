@@ -85,6 +85,56 @@ describe('stepCrumbling', () => {
     stepCrumbling(s)
     expect(crumble.dead).toBe(false)
   })
+
+  it('부서진 뒤 CRUMBLE_RESPAWN이 지나면 되살아난다', () => {
+    // 발판 생성이 사다리 한 줄이라 부서지는 발판의 약 2/3은 위아래를 잇는
+    // 유일한 통로다 — 영구히 사라지면 떨어져 돌아왔을 때 길이 끊긴다.
+    const s = createGameState(defaultModifiers())
+    const crumble = makePlatform(1, 0, 100, 40, 'crumble')
+    crumble.crumbleAt = 5
+    s.platforms = [crumble]
+
+    s.run.time = 5.1
+    stepCrumbling(s)
+    expect(crumble.dead).toBe(true)
+
+    // 되살아나기 직전 — 아직 죽어 있다
+    s.run.time = 5 + C.CRUMBLE_RESPAWN - 0.01
+    stepCrumbling(s)
+    expect(crumble.dead).toBe(true)
+
+    s.run.time = 5 + C.CRUMBLE_RESPAWN
+    stepCrumbling(s)
+    expect(crumble.dead).toBe(false)
+    // 타이머가 비워져야 다음에 밟았을 때 다시 장전된다
+    expect(crumble.crumbleAt).toBeNull()
+  })
+
+  it('되살아난 발판은 다시 밟으면 또 부서진다', () => {
+    const s = createGameState(defaultModifiers())
+    const crumble = makePlatform(1, 0, 100, 40, 'crumble')
+    crumble.crumbleAt = 5
+    s.platforms = [crumble]
+
+    // 먼저 부서뜨린다. 한 스텝에서 죽으면서 동시에 되살아나지는 않는다 —
+    // 죽인 스텝은 거기서 끝나고, 되살리기는 그 다음 호출부터 판정한다.
+    s.run.time = 5.1
+    stepCrumbling(s)
+    expect(crumble.dead).toBe(true)
+
+    s.run.time = 5 + C.CRUMBLE_RESPAWN
+    stepCrumbling(s)
+    expect(crumble.dead).toBe(false)
+
+    // 두 번째 착지 — 새 타이머가 걸린다
+    s.run.time = 20
+    applyLandingEffect(s, crumble)
+    expect(crumble.crumbleAt).toBe(20 + C.CRUMBLE_DELAY)
+
+    s.run.time = 20 + C.CRUMBLE_DELAY
+    stepCrumbling(s)
+    expect(crumble.dead).toBe(true)
+  })
 })
 
 describe('stepMovingPlatforms', () => {

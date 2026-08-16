@@ -139,8 +139,19 @@ export function applyLandingEffect(state: GameState, platform: Platform): void {
 
 export function stepCrumbling(state: GameState): void {
   for (const p of state.platforms) {
-    if (p.crumbleAt !== null && !p.dead && state.run.time >= p.crumbleAt) {
-      p.dead = true
+    if (p.crumbleAt === null) continue
+
+    if (!p.dead) {
+      if (state.run.time >= p.crumbleAt) p.dead = true
+      continue
+    }
+
+    // 부서진 뒤 CRUMBLE_RESPAWN이 지나면 되살아난다. crumbleAt이 곧 파괴 시각이라
+    // 별도 필드 없이 계산된다. crumbleAt을 비워야 applyLandingEffect가 다음에
+    // 밟았을 때 다시 장전한다 — 되살아난 발판도 똑같이 부서져야 한다.
+    if (state.run.time >= p.crumbleAt + C.CRUMBLE_RESPAWN) {
+      p.dead = false
+      p.crumbleAt = null
     }
   }
 }

@@ -17,6 +17,14 @@ export const MOVE_SPEED = 90
 export const MAX_FALL = 600
 export const SPRING_V = 750
 export const CRUMBLE_DELAY = 0.3
+/**
+ * 부서진 발판이 되살아나기까지의 시간(초).
+ * 발판 생성은 사다리 한 줄이라 곁가지가 없다 — 부서지는 발판의 약 2/3은 위아래를
+ * 잇는 유일한 통로여서, 영구히 사라지면 떨어져 되돌아왔을 때 길이 끊긴다.
+ * 되살아나게 두면 그 막힘이 스스로 풀린다. 올라가는 중에는 이미 지나친 뒤라
+ * 체감되지 않고, 부순 직후 곧바로 떨어진 경우에만 잠깐 기다리게 된다.
+ */
+export const CRUMBLE_RESPAWN = 3
 
 // 파생값
 export const MAX_JUMP_HEIGHT = (JUMP_V * JUMP_V) / (2 * GRAVITY)  // 96
