@@ -210,6 +210,8 @@ function enterLoadout(): void {
 }
 
 function startRun(): void {
+  // 판 도중 startRun 이 다시 불려도 이전 attach/overlay 가 새지 않게
+  leaveRun()
   // 적용분을 먼저 확정한다 — 재고 없는 항목은 효과를 받을 수 없다
   const { mods } = computeStartRun(save)
   persist()

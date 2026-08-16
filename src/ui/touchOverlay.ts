@@ -2,7 +2,7 @@ import type { TouchController, TouchSnapshot } from '../core/touch'
 import { FOLLOW } from '../core/touch'
 import { createHintController, type HintPhase } from './touchHint'
 
-/** 트랙 폭 96px 의 절반 — 노브가 움직이는 최대 거리 */
+/** 노브가 트랙 안에서 움직이는 최대 거리 (트랙 반폭 48px 보다 작게 — 양끝 화살표를 덮지 않는다) */
 export const TRACK_HALF = 32
 
 const HINT_TOUCH = '왼쪽 밀어서 이동 · 오른쪽 길게 눌러 점프'
@@ -61,7 +61,9 @@ export function mountTouchOverlay(
 
   const rest = buildTrack('touch-track-rest')
   const live = buildTrack('touch-track-live')
-  live.track.hidden = true
+  // hidden 속성이 아니라 클래스로 감춘다 — styles.css 의 .touch-track { display:flex } 작성자 규칙이
+  // UA 의 [hidden] { display:none } 을 이긴다(F1).
+  live.track.classList.add('is-hidden')
 
   const jump = document.createElement('div')
   jump.className = 'touch-jump-glyph'
@@ -102,13 +104,13 @@ export function mountTouchOverlay(
     rest.knob.style.transform = `translateX(${s.moveDir * TRACK_HALF}px)`
 
     if (s.moveAnchor !== null && s.movePoint !== null) {
-      live.track.hidden = false
+      live.track.classList.remove('is-hidden')
       live.track.style.left = `${s.moveAnchor.x}px`
       live.track.style.top = `${s.moveAnchor.y}px`
       const ratio = clamp((s.movePoint.x - s.moveAnchor.x) / FOLLOW, -1, 1)
       live.knob.style.transform = `translateX(${ratio * TRACK_HALF}px)`
     } else {
-      live.track.hidden = true
+      live.track.classList.add('is-hidden')
     }
 
     jump.classList.toggle('is-active', s.jumpActive)

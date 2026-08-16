@@ -349,6 +349,7 @@ canvas { image-rendering: pixelated; }
   --touch-bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
 }
 .touch-overlay-glyphs-hidden .touch-track-rest,
+.touch-overlay-glyphs-hidden .touch-track-live,
 .touch-overlay-glyphs-hidden .touch-jump-glyph { display: none; }
 
 .touch-track {
@@ -366,6 +367,8 @@ canvas { image-rendering: pixelated; }
   opacity: var(--touch-glyph-idle);
   transition: opacity 120ms ease;
 }
+/* [hidden] 속성은 위 .touch-track { display:flex } 작성자 규칙에 진다 — 클래스로 감춘다(F1) */
+.touch-track.is-hidden { display: none; }
 .touch-track.is-active { opacity: var(--touch-glyph-active); }
 .touch-track-arrow { font-size: 14px; line-height: 1; }
 .touch-knob {

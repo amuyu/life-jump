@@ -65,15 +65,21 @@ describe('mountTouchOverlay — 스냅샷 반영', () => {
   it('live 트랙은 anchor 위치에 뜨고 손가락 오프셋을 ±FOLLOW → ±TRACK_HALF 로 매핑한다', () => {
     const { touch, q } = setup()
     const live = q<HTMLElement>('.touch-track-live')!
-    expect(live.hidden).toBe(true)
+    // hidden 속성이 아니라 is-hidden 클래스를 검사한다 — styles.css 의 .touch-track { display:flex }
+    // 작성자 규칙이 UA 의 [hidden] 규칙을 이겨서, hidden=true 여도 실브라우저에서는 안 사라진다(F1).
+    // jsdom 의 getComputedStyle 은 이 UA-vs-author 우선순위를 모델링하지 않으므로 클래스로만 검증한다.
+    expect(live.classList.contains('is-hidden')).toBe(true)
     touch.emit({ moveAnchor: { x: 120, y: 480 }, movePoint: { x: 120 + FOLLOW / 2, y: 480 }, moveDir: 1 })
-    expect(live.hidden).toBe(false)
+    expect(live.classList.contains('is-hidden')).toBe(false)
     expect(live.style.left).toBe('120px')
     expect(live.style.top).toBe('480px')
     expect(q<HTMLElement>('.touch-track-live .touch-knob')!.style.transform).toBe(`translateX(${TRACK_HALF / 2}px)`)
     // FOLLOW 를 넘는 오프셋은 잘린다
     touch.emit({ moveAnchor: { x: 120, y: 480 }, movePoint: { x: 120 + FOLLOW * 3, y: 480 }, moveDir: 1 })
     expect(q<HTMLElement>('.touch-track-live .touch-knob')!.style.transform).toBe(`translateX(${TRACK_HALF}px)`)
+    // 손을 떼면(anchor 사라짐) 다시 is-hidden 이 붙는다
+    touch.emit(idle)
+    expect(live.classList.contains('is-hidden')).toBe(true)
   })
 
   it('jumpActive 가 점프 글리프의 활성 클래스를 토글한다', () => {
@@ -90,6 +96,18 @@ describe('mountTouchOverlay — 표시 조건', () => {
     const { q } = setup({ isCoarse: false })
     expect(q('.touch-overlay')!.classList.contains('touch-overlay-glyphs-hidden')).toBe(true)
     expect(q('.touch-hint')?.textContent).toBe('← → 이동 · Space 길게 눌러 점프')
+  })
+
+  it('coarse 가 아니면 live 트랙도 glyphs-hidden 대상이다 — 마우스 드래그가 슬라이더를 띄우면 안 된다', () => {
+    // 컴퓨티드 스타일이 아니라 클래스만 검증한다(F2) — .touch-overlay-glyphs-hidden .touch-track-live
+    // 가 CSS 에 있는지는 styles.css 쪽 책임이고, 여기서는 루트 클래스와 트랙의 존재만 확인한다.
+    const { touch, q } = setup({ isCoarse: false })
+    expect(q('.touch-overlay')!.classList.contains('touch-overlay-glyphs-hidden')).toBe(true)
+    expect(q('.touch-track-live')).not.toBeNull()
+    touch.emit({ moveAnchor: { x: 10, y: 10 }, movePoint: { x: 15, y: 10 }, moveDir: 1 })
+    // 마우스로 이동 존을 눌러도 오버레이 자체는 여전히 glyphs-hidden 상태를 유지한다
+    // (lastPointerType 이 'touch' 가 아니므로) — CSS 가 live 트랙을 숨긴다.
+    expect(q('.touch-overlay')!.classList.contains('touch-overlay-glyphs-hidden')).toBe(true)
   })
 
   it('숨긴 상태에서 touch 포인터 스냅샷이 오면 글리프를 보인다', () => {
