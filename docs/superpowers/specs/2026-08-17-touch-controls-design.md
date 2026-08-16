@@ -271,12 +271,17 @@ const FOLLOW = 24   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
   anchor 가 따라오면 트랙도 따라온다. 손을 떼면 즉시 사라진다.
 - 하단 상시 트랙과 손가락 위 트랙이 같은 그림이라 "저 그림이 손가락 밑에서 이렇게 움직이는 것"이
   한 번에 읽힌다.
+- 구현 주의: "사라진다"는 `hidden` 속성이 아니라 `is-hidden` 클래스로 구현한다. `.touch-track`
+  자체가 `display: flex` 작성자 규칙을 갖고 있어 UA 의 `[hidden] { display: none }` 을 specificity 로
+  이기므로, `hidden` 속성만으로는 트랙이 안 사라진다.
 
 ### 5.4 표시 조건
 
 - `matchMedia('(pointer: coarse)').matches` → 글리프 표시. 아니면 숨김.
 - 숨긴 상태에서 `lastPointerType === 'touch'` 인 스냅샷이 오면 그 판 동안 표시(하이브리드 기기).
 - 이 판단은 오버레이 안에서만 한다 — 판정(touch.ts)은 기기와 무관하게 항상 동작.
+- "숨김"은 상시 글리프뿐 아니라 5.3 의 손가락 위(live) 인디케이터도 포함한다 — fine pointer 기기에서
+  마우스로 이동 존을 드래그해도 뜨는 슬라이더가 없어야 한다.
 
 ### 5.5 첫 판 안내
 
@@ -296,6 +301,8 @@ const FOLLOW = 24   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 - 1.5초가 먼저 지나도 같은 경로(내부에서 `dismissHint()` 호출)로 페이드·`onHintDone`.
 - main 은 `onHintDone` 에서 `save.controlsHintSeen = true; persist()`.
 - 게임은 안내 중에도 멈추지 않는다 — 첫 발판 위라 위험이 없다.
+- 판이 안내 노출 창 도중에 끝나면(`leaveRun` → `unmount()`) `onHintDone` 없이 그냥 폐기된다 —
+  `controlsHintSeen` 은 여전히 false 라 다음 판에서 안내가 다시 뜬다. 의도된 동작이다.
 
 ## 6. 저장 (`core/storage.ts`)
 

@@ -249,7 +249,7 @@ SUPABASE_SERVICE_ROLE_KEY               # 자동 주입
 
 | 영역 | 현재 | 이식 시 필요한 것 |
 |---|---|---|
-| **입력** | `core/input.ts`가 키보드 전용 (`handleKeyDown/Up`, `input.attach(window, …)`) | 완료 — 터치 스펙 참조. 실기기 검증(9절 체크리스트) 남음 |
+| **입력** | `core/input.ts`가 키보드 전용 (`handleKeyDown/Up`, `input.attach(window, …)`) | 완료 — 터치 스펙 참조. 실기기 검증(9절 체크리스트) 남음. 스와이프백은 SDK 설치 후 검증 필요(스펙 7.4) |
 | **화면 맞춤** | `render/canvas.ts`가 정수 배율만 사용 (`Math.floor`) | 세로 모바일에서 여백이 크게 남을 수 있음. safe-area·노치 대응 확인 필요 |
 | **빌드** | 순수 Vite (`vite build`) | `granite.config.ts` + `ait build`/`ait deploy`로 전환. `web.commands`에 기존 vite 커맨드를 위임 |
 | **SDK 호출부** | 없음 | React 훅이 아니므로 싱글턴 모듈(`src/toss/*`)로 작성. `game/`·`render/` 계층에는 절대 넣지 않는다 (architecture.test.ts 경계 유지) |
