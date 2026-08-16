@@ -884,7 +884,7 @@ describe('createTouch — reset() (모달용, suppressed)', () => {
 - [ ] **Step 2: Run to verify failure**
 
 Run: `npx vitest run tests/core/touch.test.ts`
-Expected: the first two and the last-but-one FAIL (current `reset` deletes pointers, so the second finger is accepted).
+Expected: 존 점유를 검사하는 첫 테스트가 FAIL한다 — 현재 `reset`은 `clear`와 같아 포인터를 삭제하므로 두 번째 포인터가 허용된다. 나머지 넷은 삭제 구현으로도 통과하는 것이 맞다 (suppressed 여부와 무관한 성질을 검사한다).
 
 - [ ] **Step 3: Implement suppressed reset**
 
