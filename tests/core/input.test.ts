@@ -133,4 +133,65 @@ describe('createInput', () => {
     b.handleKeyDown('ArrowUp')
     expect(b.snapshot().jumpHeld).toBe(true)
   })
+
+  it('키보드와 터치는 소스별 상태를 가지며 OR로 합쳐진다', () => {
+    // 키보드 ←를 누른 채 마우스/터치로 이동 존을 눌렀다 떼도 ←는 살아 있어야 한다.
+    // 마지막 호출이 이기는 단일 불리언이면 데스크탑에서 마우스 클릭 한 번에 키가 풀린다.
+    const input = createInput()
+    input.handleKeyDown('ArrowLeft')
+    input.press('left', 'touch')
+    input.release('left', 'touch')
+    expect(input.snapshot().left).toBe(true)
+    input.handleKeyUp('ArrowLeft')
+    expect(input.snapshot().left).toBe(false)
+  })
+
+  it('터치 held 중 키보드 up이 와도 터치 쪽은 유지된다', () => {
+    const input = createInput()
+    input.press('right', 'touch')
+    input.handleKeyDown('ArrowRight')
+    input.handleKeyUp('ArrowRight')
+    expect(input.snapshot().right).toBe(true)
+    input.release('right', 'touch')
+    expect(input.snapshot().right).toBe(false)
+  })
+
+  it('점프 엣지는 합산 held가 false→true일 때만 선다', () => {
+    const input = createInput()
+    input.handleKeyDown('Space')
+    input.consume()
+    input.press('jump', 'touch')     // Space 누른 채 점프 존 클릭 — 새 엣지가 아니다
+    expect(input.snapshot().jumpPressed).toBe(false)
+    expect(input.snapshot().jumpHeld).toBe(true)
+    input.handleKeyUp('Space')
+    expect(input.snapshot().jumpHeld).toBe(true)   // 터치가 아직 잡고 있다
+    input.release('jump', 'touch')
+    expect(input.snapshot().jumpHeld).toBe(false)
+  })
+
+  it('reset()의 jumpBlocked는 키보드에만 적용된다', () => {
+    // 터치는 pointerdown이 반복되지 않으므로 block이 필요 없다 — 터치 컨트롤러가
+    // 존 점유(suppressed)로 따로 막는다. 여기서는 input이 터치를 막지 않는지만 본다.
+    const input = createInput()
+    input.handleKeyDown('Space')
+    input.reset()
+    input.handleKeyDown('Space')                    // 키 반복 — 막힌다
+    expect(input.snapshot().jumpPressed).toBe(false)
+    input.press('jump', 'touch')                    // 새 손가락 — 엣지
+    expect(input.snapshot().jumpPressed).toBe(true)
+    expect(input.snapshot().jumpHeld).toBe(true)
+  })
+
+  it('reset()은 두 소스를 모두 뗀 것으로 만든다', () => {
+    const input = createInput()
+    input.press('left', 'touch')
+    input.press('jump', 'touch')
+    input.handleKeyDown('ArrowRight')
+    input.reset()
+    const s = input.snapshot()
+    expect(s.left).toBe(false)
+    expect(s.right).toBe(false)
+    expect(s.jumpHeld).toBe(false)
+    expect(s.jumpPressed).toBe(false)
+  })
 })
