@@ -1,5 +1,5 @@
 import type { SaveData } from '../core/storage'
-import { UPGRADE_MAX } from '../core/storage'
+import { UPGRADE_MAX, CONSUMABLE_MAX } from '../core/storage'
 import { UPGRADES, CONSUMABLES, nextUpgradePrice } from '../data/shop'
 import { ICON_MAPS, ICON_PALETTES, ITEM_MAPS, ITEM_PALETTES } from '../data/pixelmaps'
 import { spriteCanvas } from './spritePreview'
@@ -138,7 +138,16 @@ export function renderShop(
     const footer = document.createElement('div')
     footer.className = 'consumable-footer'
     footer.appendChild(coinRow(c.price))
-    footer.appendChild(actionButton('구매', save.coins < c.price, () => cb.onBuyConsumable(c.id)))
+    // main.ts의 구매 콜백은 재고가 CONSUMABLE_MAX면 조용히 되돌아간다. 버튼이
+    // 그걸 모르면 눌러도 아무 일이 없는 것처럼 보인다 — 위 업그레이드 섹션이
+    // 만렙에서 배지로 바꾸는 것과 같은 이유로 여기서도 상태를 드러낸다.
+    // 업그레이드와 달리 재고는 쓰면 줄어드니 배지가 아니라 비활성 버튼으로 둔다.
+    const maxed = stock >= CONSUMABLE_MAX
+    footer.appendChild(actionButton(
+      maxed ? '최대 보유' : '구매',
+      maxed || save.coins < c.price,
+      () => cb.onBuyConsumable(c.id),
+    ))
     card.appendChild(footer)
 
     consumableGrid.appendChild(card)

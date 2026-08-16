@@ -66,7 +66,9 @@ export function renderResult(
 
   const note = document.createElement('p')
   note.className = 'type-caption result-note'
-  note.textContent = '획득한 재화는 전부 보존됩니다. 잃은 것은 높이뿐입니다.'
+  // "잃은 것은 높이뿐"은 최고기록도 날아간 것처럼 읽힌다 — bestHeight와 recentRuns는
+  // finishRun에서 저장된다. 죽은 직후야말로 기록이 남았다고 알려줘야 할 순간이다.
+  note.textContent = '이번 판은 종료되지만 획득한 재화와 최고기록은 보존됩니다.'
   box.appendChild(note)
 
   const actions = document.createElement('div')
