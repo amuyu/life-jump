@@ -48,19 +48,22 @@ src/core/input.ts        InputState / Input 인터페이스 유지.
 src/core/touch.ts  (신규) 터치 컨트롤러. Pointer Events → 존/조이스틱 판정 → input.press/release(…, 'touch').
                          전달받은 element 하나에 attach → detach 함수를 돌려준다.
                          pointerId 별 상태를 들고 있다가 up/cancel 에서 자기 액션만 해제.
-                         reset() 은 포인터를 suppressed 로 표시하고 액션을 해제한다.
+                         reset() 은 포인터를 suppressed 로 표시하고 액션을 해제한다 (모달용).
+                         clear() 는 포인터 목록을 비우고 액션을 해제한다 (수명 종료용 — attach/detach 가 부른다).
                          DOM 의존은 전달받은 element 뿐 (document/window 직접 참조 없음).
 
 src/ui/touchOverlay.ts (신규) 슬라이더 트랙 + ● 글리프 + 조이스틱 인디케이터 + 첫 판 안내. 순수 DOM.
-                         touch.ts 가 발행하는 스냅샷을 받아 그리기만 한다 — 자체 상태 없음.
+                         touch.ts 가 발행하는 스냅샷을 받아 그리기만 한다. save 를 모른다 —
+                         안내 완료는 onHintDone 콜백으로 알린다. { dismissHint, unmount } 를 돌려준다.
 
 src/toss/screen.ts (신규) setIosSwipeGestureEnabled 래퍼. 동적 import + isSupported 가드,
                          호출 직렬화, 실패는 삼킨다. 브라우저에서는 no-op.
 
 src/main.ts              startRun: detachTouch = touch.attach(gameLayer), overlay 마운트, 스와이프백 off.
                          판 종료·로비 복귀: detachTouch(), overlay 제거, 스와이프백 on.
-                         input.reset() 을 부르는 모든 지점(퀴즈 종료, visibilitychange, startRun)에서
-                         touch.reset() 도 함께 부른다. 두 reset 은 순서 무관하다 (3절, 4.6절).
+                         퀴즈 종료: input.reset() + touch.reset() (순서 무관 — 3절, 4.6절).
+                         visibilitychange 복귀: input.reset() + touch.clear() (OS 가 터치를 가져갔다).
+                         startRun 은 attach 가 clear 하므로 추가 호출 없음.
 ```
 
 **멀티 소스** — 키보드와 터치(마우스 포함)는 각자 상태를 가지며 스냅샷에서 OR 된다.
@@ -131,9 +134,12 @@ export interface TouchSnapshot {
 }
 
 export interface TouchController {
-  /** DOM 배선. 반환된 함수가 detach — 호출자(main.ts)가 보관한다 */
+  /** DOM 배선. 반환된 함수가 detach — 호출자(main.ts)가 보관한다. attach·detach 모두 clear() 를 부른다 */
   attach(el: HTMLElement): () => void
+  /** 모달용 — 손가락이 아직 화면에 있다. 포인터를 suppressed 로 보존하고 액션만 해제 (4.6) */
   reset(): void
+  /** 수명 종료·OS 개입용 — 포인터 목록을 전부 삭제하고 액션 해제 (4.6). 이후 어떤 stale up 도 무시된다 */
+  clear(): void
   subscribe(cb: (s: TouchSnapshot) => void): () => void
   /** 테스트용 저수준 진입점 — DOM 없이 가짜 이벤트를 넣는다 */
   handlePointer(e: PointerLike): void
@@ -189,8 +195,8 @@ const FOLLOW = 24   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 
 ### 4.4 점프 존 — 홀드 버튼
 
-- `down` → `input.press('jump')`. 공중에서 다시 down 이면 두 번째 엣지 → 더블점프. 별도 처리 없음.
-- `up`/`cancel` → `input.release('jump')`. 가변 점프 컷오프가 여기서 갈린다.
+- `down` → `input.press('jump', 'touch')`. 공중에서 다시 down 이면 두 번째 엣지 → 더블점프. 별도 처리 없음.
+- `up`/`cancel` → `input.release('jump', 'touch')`. 가변 점프 컷오프가 여기서 갈린다.
 
 ### 4.5 포인터 캡처·취소
 
@@ -198,8 +204,18 @@ const FOLLOW = 24   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 - `cancel` 은 `up` 과 동일 처리 (4.1 의 매핑으로 `pointercancel`/`lostpointercapture` 둘 다 여기로 온다).
 - `pointerType` 을 가리지 않는다 — 마우스도 동작하며 데스크탑 개발 확인에 쓰인다.
 
-### 4.6 reset()
+### 4.6 reset() 과 clear()
 
+두 함수는 수명이 다르다. **reset 은 손가락이 아직 화면에 있을 때**(퀴즈 모달 열고 닫기),
+**clear 는 우리가 더 이상 그 손가락의 up 을 받을 수 없을 때**(판 종료로 detach, 페이지 숨김으로 OS 가
+터치를 가져감, 새 판 attach) 부른다. reset 만 있으면 detach 뒤 up 을 영영 못 받는 포인터가 suppressed 로
+남아 다음 판의 존을 영구 점유한다.
+
+**clear()**
+- 추적 목록을 전부 비우고, 잡고 있던 액션을 전부 `release(…, 'touch')`. `dir = 0`. 스냅샷 발행.
+- `attach()` 시작 시와 detach 시 내부에서 호출된다. `visibilitychange` 복귀 시에도 main 이 이걸 부른다(8절).
+
+**reset()**
 - 추적 중인 모든 포인터를 **삭제하지 않고 `suppressed = true` 로 표시**하고, 잡고 있던 액션을 전부
   `release(…, 'touch')` 한다. `dir = 0`.
 - suppressed 포인터는 존을 계속 점유한다 — 그 손가락이 떠 있는 동안 같은 존의 다른 down 은 4.2 규칙으로
@@ -221,7 +237,20 @@ const FOLLOW = 24   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 
 - gameLayer 안, 캔버스 위에 겹치는 `div.touch-overlay`. `position: absolute; inset: 0; pointer-events: none`.
   판정은 gameLayer 가 하고 오버레이는 그림만 그린다. z-index 는 캔버스 위, 퀴즈/결과 모달(30) 아래.
-- `mountTouchOverlay(gameLayer, touch, opts)` → `{ unmount }`. `touch.subscribe` 로 스냅샷을 받아 갱신.
+- 인터페이스:
+  ```ts
+  interface TouchOverlayOptions {
+    showHint: boolean          // !save.controlsHintSeen
+    onHintDone(): void         // 안내가 끝났을 때 딱 한 번 — main 이 save 갱신·저장
+    isCoarse?: () => boolean   // 기본 matchMedia('(pointer: coarse)'). 테스트 주입용
+  }
+  interface MountedTouchOverlay {
+    dismissHint(): void        // 멱등 — 여러 번 불려도 타이머·onHintDone 중복 없음
+    unmount(): void            // 구독 해제 + DOM 제거 + 남은 타이머 정리. 안내가 진행 중이었으면 onHintDone 은 부르지 않는다
+  }
+  function mountTouchOverlay(gameLayer: HTMLElement, touch: TouchController, opts: TouchOverlayOptions): MountedTouchOverlay
+  ```
+- `touch.subscribe` 로 스냅샷을 받아 갱신. `save` 를 직접 읽거나 쓰지 않는다 — 오버레이는 순수 DOM.
 
 ### 5.2 상시 글리프
 
@@ -256,9 +285,12 @@ const FOLLOW = 24   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
   - 그 외: "← → 이동 · Space 길게 눌러 점프"
   ("탭"이 아니라 "길게"라야 가변 점프를 가르친다.)
 - 노출: 판 시작 후 1.5초 표시 → 0.3초 페이드. **어떤 입력이든 들어오면 즉시 페이드**
-  (touch 스냅샷 변화 또는 키보드 — main.ts 가 `input.snapshot()` 에서 어느 플래그든 참이 되는 첫
-  프레임에 `hint.dismiss()` 를 부른다).
-- 표시가 끝난 시점에 `save.controlsHintSeen = true` 저장.
+  (main.ts 가 `input.snapshot()` 에서 어느 플래그든 참이 되는 첫 프레임에 `overlay.dismissHint()` 를
+  부른다 — 키보드·터치 어느 소스든 스냅샷에 나타나므로 오버레이가 터치 스냅샷을 따로 볼 필요 없다).
+- `dismissHint()` 규약: 첫 호출에서 1.5초 타이머를 취소하고 페이드를 시작, 페이드 끝에 `onHintDone()` 을
+  **한 번** 부른다. 이미 페이드 중/완료면 아무 일도 안 한다. `showHint: false` 로 마운트됐으면 항상 no-op.
+- 1.5초가 먼저 지나도 같은 경로(내부에서 `dismissHint()` 호출)로 페이드·`onHintDone`.
+- main 은 `onHintDone` 에서 `save.controlsHintSeen = true; persist()`.
 - 게임은 안내 중에도 멈추지 않는다 — 첫 발판 위라 위험이 없다.
 
 ## 6. 저장 (`core/storage.ts`)
@@ -317,27 +349,34 @@ body { touch-action: manipulation; }   /* 더블탭 줌 제거. 스크롤·핀�
 ## 8. `main.ts` 배선
 
 ```
-모듈 스코프: let detachTouch: (() => void) | null = null, overlay: { unmount(): void } | null = null
+모듈 스코프: let detachTouch: (() => void) | null = null, overlay: MountedTouchOverlay | null = null
 
 startRun:
-  detachTouch = touch.attach(gameLayer)   (touchmove preventDefault 포함)
-  overlay = mountTouchOverlay(gameLayer, touch, { showHint: !save.controlsHintSeen, ... })
+  detachTouch = touch.attach(gameLayer)   (내부에서 clear(); touchmove preventDefault 포함)
+  overlay = mountTouchOverlay(gameLayer, touch, {
+    showHint: !save.controlsHintSeen,
+    onHintDone() { save.controlsHintSeen = true; persist() },
+  })
   setSwipeBack(false)
-  (기존) loop.reset(); input.reset(); → touch.reset() 추가 (순서 무관)
+  (기존) loop.reset(); input.reset();   — attach 가 이미 clear 했으므로 touch.reset() 은 불필요
 
 openQuiz 종료 콜백:
-  (기존) loop.reset(); input.reset(); → touch.reset() 추가
+  (기존) loop.reset(); input.reset(); → touch.reset() 추가 (순서 무관 — 손가락은 아직 화면에 있다)
 
 visibilitychange (복귀):
-  (기존) loop.reset(); input.reset(); → touch.reset() 추가
+  (기존) loop.reset(); input.reset(); → touch.clear() 추가
+  reset 이 아니라 clear 인 이유: 페이지가 숨겨진 동안 OS 가 터치를 가져갔다. 추적 중이던 포인터는
+  전부 stale 이고 up 이 안 올 수 있다. 늦게 오더라도 목록에 없어 무시된다.
 
 finishRun / goToLobby / enterLoadout:
-  detachTouch?.(); detachTouch = null; overlay?.unmount(); overlay = null; setSwipeBack(true)
+  detachTouch?.(); detachTouch = null;   (detach 가 내부에서 clear — 눌린 채 끝난 손가락이 다음 판 존을 점유하지 않는다)
+  overlay?.unmount(); overlay = null; setSwipeBack(true)
   (결과 모달은 gameLayer 위 z-30 이라 터치가 게임에 닿지 않지만, detach 로 리스너 자체를 뗀다)
   goToLobby/enterLoadout 은 판 중이 아닐 때도 불리므로 null 가드로 멱등하게 둔다.
 
 frame:
-  안내 표시 중이면 input.snapshot() 에 참 플래그가 하나라도 있을 때 hint.dismiss()
+  overlay !== null 이고 input.snapshot() 에 참 플래그가 하나라도 있으면 overlay.dismissHint()
+  (멱등이라 매 프레임 불러도 무해하지만, 한 번 부른 뒤에는 로컬 플래그로 건너뛴다)
 ```
 
 ## 9. 테스트
@@ -356,8 +395,19 @@ frame:
 - reset: 액션 전부 release. 그 뒤 **suppressed 포인터의 move 는 무시, up 은 제거만**;
   suppressed 포인터가 떠 있는 동안 같은 존의 새 down 은 무시(첫 손가락 누른 채 두 번째 손가락 jump 안 됨);
   suppressed 포인터가 up 된 뒤의 새 down 은 정상 엣지.
+- clear: 액션 전부 release + 목록 삭제. **down 상태에서 clear → 같은 pointerId 의 up 은 무시,
+  같은 존의 새 down 은 정상 동작** (detach→재attach 시나리오). suppressed 포인터도 clear 로 사라진다.
 - 추적 목록에 없는 pointerId 의 move/up 은 무해.
 - 스냅샷: 상태 변화마다 발행, 내용 정확 (`lastPointerType` 포함).
+
+### `tests/ui/touchOverlay.test.ts` — jsdom (기존 `tests/ui/*` 와 같은 방식)
+
+- `dismissHint()` 멱등: 두 번 불러도 `onHintDone` 은 한 번, 타이머는 취소됨(fake timers).
+- 1.5초 경과 시 자동으로 같은 경로 → `onHintDone` 한 번. 그 뒤 `dismissHint()` 는 no-op.
+- `showHint: false` 면 안내 DOM 이 없고 `dismissHint()` 는 no-op, `onHintDone` 은 영원히 안 불린다.
+- `unmount()` 는 진행 중 타이머를 정리하고 `onHintDone` 을 부르지 않는다.
+- `isCoarse` 주입: false 면 글리프 숨김, 이후 `lastPointerType: 'touch'` 스냅샷이 오면 표시.
+- 스냅샷 `moveDir`/`moveAnchor`/`jumpActive` 에 따라 트랙·노브·● 의 클래스/위치가 바뀐다.
 
 ### `tests/core/input.test.ts`
 
@@ -382,6 +432,8 @@ frame:
 - 양손 동시 입력: 왼손 이동 중 오른손 점프·더블점프.
 - 왼쪽 가장자리에서 시작한 이동에 iOS 스와이프백이 뜨지 않는다. 로비 복귀 후에는 다시 뜬다.
 - 알림바를 내렸다 올린 뒤(=pointercancel) 잡고 있던 방향·점프가 풀려 있다.
+- 홈으로 나갔다 돌아온 뒤(visibilitychange) 이동·점프 존이 모두 정상 반응한다 (stale 포인터 점유 없음).
+- 손가락을 누른 채 판이 끝난 뒤(낙사) 다음 판에서 같은 존이 정상 반응한다.
 - 퀴즈 모달을 닫은 직후 첫 점프가 먹는다(손을 뗐다 다시 눌렀을 때). 누른 채였다면 안 먹는다.
 - 롱프레스에 메뉴/돋보기가 안 뜬다. 핀치·더블탭 줌이 안 된다. 페이지가 안 튕긴다.
 - 데스크탑: 오버레이가 숨겨져 있고 키보드가 그대로 동작하며, 마우스로 존을 눌러도 동작한다.
