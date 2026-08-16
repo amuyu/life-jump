@@ -20,7 +20,7 @@
 - `reset()` (modal) keeps pointers as `suppressed`; `clear()` (lifecycle: attach, detach, visibilitychange) drops them. Neither may depend on being called before/after `input.reset()`.
 - `jumpBlocked` exists for the keyboard source only. Jump edge fires only when the combined `jumpHeld` goes false → true.
 - Touch controller and overlay must not read or write `save`; the overlay reports hint completion via `onHintDone`.
-- Hint copy: touch `"왼쪽 밀어서 이동 · 오른쪽 길게 눌러 점프"`, otherwise `"← → 이동 · Space 길게 눌러 점프"`. Show 1.5s, fade 0.3s, any input dismisses early.
+- Hint copy: touch `"왼쪽 밀어서 이동 · 오른쪽 길게 눌러 점프"`, otherwise `"← → 이동 · Space 길게 눌러 점프"`. Show 1.5s, fade 0.3s. Any input dismisses early: the overlay watches touch snapshots (`moveAnchor !== null || jumpActive` — a move-zone `down` at `dir = 0` never reaches `InputState`), `main.ts` watches `InputState` for the keyboard.
 - Save schema: add `controlsHintSeen: boolean` (default `false`), bump `SAVE_VERSION` 2 → 3, migration only advances the version.
 - CSS: `body { touch-action: manipulation }`; `.game-layer { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none }`. Do **not** put `overscroll-behavior` on `body`.
 - Swipe-back SDK calls are serialized and de-duplicated; failures are swallowed; browser is a no-op.
@@ -870,10 +870,13 @@ describe('createTouch — reset() (모달용, suppressed)', () => {
   it('clear는 suppressed 포인터도 지운다', () => {
     const { input, touch, ev } = setup()
     ev('down', 1, RIGHT_X)
+    input.consume()               // 첫 down 의 엣지를 지운다 — 안 지우면 새 down 이 무시돼도 통과한다
     touch.reset()
     touch.clear()
+    expect(input.snapshot().jumpHeld).toBe(false)
     ev('down', 2, RIGHT_X)
     expect(input.snapshot().jumpPressed).toBe(true)
+    expect(input.snapshot().jumpHeld).toBe(true)
   })
 })
 ```
@@ -1438,6 +1441,7 @@ git commit -m "feat(ui): first-run controls hint state machine with injectable t
   - `div.touch-track.touch-track-live` positioned via `style.left/top` at `moveAnchor`; `hidden` attribute when no anchor; knob translateX = clamp((movePoint.x − moveAnchor.x)/FOLLOW, −1, 1) × TRACK_HALF
   - `div.touch-jump-glyph` (`●`); gets `is-active` while `jumpActive`
   - `div.touch-hint` with text; classes `touch-hint-shown` / `touch-hint-fading`; removed from DOM on `done`; not created when `showHint` is false
+  - the overlay dismisses the hint itself as soon as a snapshot has `moveAnchor !== null || jumpActive` (a move-zone `down` at `dir = 0` is invisible in `InputState`); `main.ts` additionally calls `dismissHint()` for keyboard input
   - `export const TRACK_HALF = 32` (track is 96px wide)
 
 - [ ] **Step 1: Install jsdom**
@@ -1565,6 +1569,23 @@ describe('mountTouchOverlay — 안내', () => {
     expect(onHintDone).toHaveBeenCalledTimes(1)
     vi.advanceTimersByTime(HINT_SHOW_MS)
     expect(onHintDone).toHaveBeenCalledTimes(1)
+  })
+
+  it('활성 포인터가 보이면 오버레이가 스스로 안내를 내린다 — 이동 존 down 직후(dir=0)도 포함', () => {
+    // 이동 존을 처음 누르면 12px 밀기 전까지 InputState 는 전부 false 다. main 의 스냅샷
+    // 검사만으로는 "화면을 눌렀는데 안내가 안 내려가는" 구간이 생기므로 오버레이가
+    // moveAnchor/jumpActive 를 직접 본다.
+    const { touch, q, onHintDone } = setup()
+    touch.emit({ moveAnchor: { x: 50, y: 500 }, movePoint: { x: 50, y: 500 }, moveDir: 0 })
+    expect(q('.touch-hint')!.classList.contains('touch-hint-fading')).toBe(true)
+    vi.advanceTimersByTime(HINT_FADE_MS)
+    expect(onHintDone).toHaveBeenCalledTimes(1)
+  })
+
+  it('jumpActive 스냅샷도 안내를 내린다', () => {
+    const { touch, q } = setup()
+    touch.emit({ jumpActive: true })
+    expect(q('.touch-hint')!.classList.contains('touch-hint-fading')).toBe(true)
   })
 
   it('1.5초가 지나면 스스로 페이드한다', () => {
@@ -1697,6 +1718,9 @@ export function mountTouchOverlay(
     }
 
     const active = s.moveAnchor !== null
+    // 손가락이 닿은 순간 안내를 내린다 — 이동 존 down 직후는 dir=0 이라 InputState 로는
+    // 보이지 않는다. 키보드는 main 이 스냅샷 플래그로 dismissHint 를 부른다. 멱등이라 겹쳐도 무해.
+    if (active || s.jumpActive) hint.dismiss()
     rest.track.classList.toggle('is-active', active)
     rest.knob.style.transform = `translateX(${s.moveDir * TRACK_HALF}px)`
 
@@ -1803,13 +1827,25 @@ describe('createSwipeBack', () => {
   })
 
   it('마지막으로 요청한 값과 같으면 스킵한다', async () => {
+    // SDK 호출은 chain.then 안에서 비동기로 시작된다 — resolveNext 는 반드시 호출이
+    // 실제로 일어난 것을(calls) 확인한 뒤에 부른다. 그 전에 부르면 빈 큐를 건드릴 뿐이다.
     const sdk = deferredSdk()
     const sb = createSwipeBack(async () => sdk.fn)
-    void sb.set(false); sdk.resolveNext(); await flush()
-    void sb.set(false); await flush()
+    void sb.set(false)
+    await flush()
     expect(sdk.calls).toEqual([false])
-    void sb.set(true); sdk.resolveNext(); await flush()
+    sdk.resolveNext()
+    await flush()
+
+    void sb.set(false)                       // 같은 값 — 보내지 않는다
+    await flush()
+    expect(sdk.calls).toEqual([false])
+
+    void sb.set(true)
+    await flush()
     expect(sdk.calls).toEqual([false, true])
+    sdk.resolveNext()
+    await flush()
   })
 
   it('SDK 가 던져도 삼키고 다음 호출은 계속된다', async () => {
@@ -2151,9 +2187,9 @@ In `openQuiz`'s completion callback, after `input.reset()` add:
     touch.reset()     // 손가락은 아직 화면에 있다 — suppressed 로 두고 액션만 해제 (순서 무관)
 ```
 
-- [ ] **Step 7: frame dismisses the hint on first input**
+- [ ] **Step 7: frame dismisses the hint on first keyboard input**
 
-In `frame()`, inside `if (state !== null) {` before the quiz check:
+Touch is covered by the overlay itself (it watches `moveAnchor`/`jumpActive` in its own subscription); this loop covers the keyboard, whose presses never appear in touch snapshots. In `frame()`, inside `if (state !== null) {` before the quiz check:
 
 ```ts
     if (overlay !== null && !hintDismissed) {
