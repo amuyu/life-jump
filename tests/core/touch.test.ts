@@ -237,6 +237,20 @@ describe('createTouch — reset() (모달용, suppressed)', () => {
     expect(input.snapshot().jumpPressed).toBe(true)
   })
 
+  it('suppressed 이동 존 손가락의 move는 방향을 바꾸지 못한다', () => {
+    const { input, touch, ev, snaps } = setup()
+    ev('down', 1, LEFT_X); ev('move', 1, LEFT_X + 30)
+    expect(input.snapshot().right).toBe(true)
+    touch.reset()
+    const n = snaps.length
+    ev('move', 1, LEFT_X + 60)          // 죽은 손가락 — 판정도, 스냅샷 발행도 없다
+    expect(input.snapshot().right).toBe(false)
+    expect(input.snapshot().left).toBe(false)
+    expect(snaps.length).toBe(n)
+    ev('move', 1, LEFT_X - 60)
+    expect(input.snapshot().left).toBe(false)
+  })
+
   it('reset 뒤 이동 존 suppressed 손가락은 스냅샷에서 사라진다', () => {
     const { touch, ev, snaps } = setup()
     ev('down', 1, LEFT_X); ev('move', 1, LEFT_X + 30)
