@@ -293,3 +293,85 @@ describe('createTouch — reset() (모달용, suppressed)', () => {
     expect(input.snapshot().jumpHeld).toBe(true)
   })
 })
+
+type Handler = (e: unknown) => void
+
+function fakeElement() {
+  const handlers: Record<string, Handler> = {}
+  const removed: string[] = []
+  const options: Record<string, unknown> = {}
+  const captured: number[] = []
+  const el = {
+    addEventListener: (type: string, fn: Handler, opts?: unknown) => { handlers[type] = fn; options[type] = opts },
+    removeEventListener: (type: string) => { removed.push(type) },
+    setPointerCapture: (id: number) => { captured.push(id) },
+  }
+  return { el, handlers, removed, options, captured }
+}
+
+describe('createTouch — attach()', () => {
+  it('pointer 이벤트를 handlePointer로 넘기고 down에서 setPointerCapture를 부른다', () => {
+    const { input, touch } = setup()
+    const { el, handlers, captured } = fakeElement()
+    touch.attach(el)
+    handlers['pointerdown']!({ pointerId: 4, clientX: RIGHT_X, clientY: 10, pointerType: 'touch' })
+    expect(captured).toEqual([4])
+    expect(input.snapshot().jumpHeld).toBe(true)
+    handlers['pointerup']!({ pointerId: 4, clientX: RIGHT_X, clientY: 10, pointerType: 'touch' })
+    expect(input.snapshot().jumpHeld).toBe(false)
+  })
+
+  it('pointercancel과 lostpointercapture는 cancel로 처리된다', () => {
+    const { input, touch } = setup()
+    const { el, handlers } = fakeElement()
+    touch.attach(el)
+    handlers['pointerdown']!({ pointerId: 1, clientX: RIGHT_X, clientY: 10, pointerType: 'touch' })
+    handlers['pointercancel']!({ pointerId: 1, clientX: RIGHT_X, clientY: 10, pointerType: 'touch' })
+    expect(input.snapshot().jumpHeld).toBe(false)
+
+    handlers['pointerdown']!({ pointerId: 2, clientX: RIGHT_X, clientY: 10, pointerType: 'touch' })
+    handlers['lostpointercapture']!({ pointerId: 2, clientX: RIGHT_X, clientY: 10, pointerType: 'touch' })
+    expect(input.snapshot().jumpHeld).toBe(false)
+  })
+
+  it('touchmove는 passive:false 로 등록되고 preventDefault 를 부른다', () => {
+    const { touch } = setup()
+    const { el, handlers, options } = fakeElement()
+    touch.attach(el)
+    expect(options['touchmove']).toEqual({ passive: false })
+    let prevented = 0
+    handlers['touchmove']!({ preventDefault: () => { prevented += 1 } })
+    expect(prevented).toBe(1)
+  })
+
+  it('detach는 리스너를 전부 떼고 clear 한다 — 눌린 채 끝난 손가락이 다음 attach 의 존을 점유하지 않는다', () => {
+    const { input, touch } = setup()
+    const { el, handlers, removed } = fakeElement()
+    const detach = touch.attach(el)
+    handlers['pointerdown']!({ pointerId: 1, clientX: RIGHT_X, clientY: 10, pointerType: 'touch' })
+    input.consume()
+    detach()
+    expect(input.snapshot().jumpHeld).toBe(false)
+    expect(removed.sort()).toEqual(
+      ['lostpointercapture', 'pointercancel', 'pointerdown', 'pointermove', 'pointerup', 'touchmove'],
+    )
+    // 재attach 후 같은 존의 새 손가락은 정상
+    const second = fakeElement()
+    touch.attach(second.el)
+    second.handlers['pointerdown']!({ pointerId: 9, clientX: RIGHT_X, clientY: 10, pointerType: 'touch' })
+    expect(input.snapshot().jumpPressed).toBe(true)
+  })
+
+  it('setPointerCapture 가 없거나 던져도 attach 는 동작한다', () => {
+    const { input, touch } = setup()
+    const handlers: Record<string, Handler> = {}
+    const el = {
+      addEventListener: (type: string, fn: Handler) => { handlers[type] = fn },
+      removeEventListener: () => {},
+      setPointerCapture: () => { throw new Error('InvalidStateError') },
+    }
+    touch.attach(el)
+    handlers['pointerdown']!({ pointerId: 1, clientX: RIGHT_X, clientY: 10, pointerType: 'touch' })
+    expect(input.snapshot().jumpHeld).toBe(true)
+  })
+})

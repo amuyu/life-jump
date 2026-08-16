@@ -174,8 +174,41 @@ export function createTouch(input: Input, layout: () => { width: number }): Touc
     return () => { subs.delete(cb) }
   }
 
-  const attach = (_el: TouchTarget): (() => void) => {
-    throw new Error('attach 는 Task 5 에서 구현한다')
+  const attach = (el: TouchTarget): (() => void) => {
+    clear()   // 이전 판에서 눌린 채 끝난 손가락이 남아 있으면 안 된다
+
+    type PE = { pointerId: number; clientX: number; clientY: number; pointerType?: string }
+    const toLike = (type: PointerLike['type']) => (e: PE) =>
+      handlePointer({ type, pointerId: e.pointerId, clientX: e.clientX, clientY: e.clientY, pointerType: e.pointerType })
+
+    const onDown = (e: PE) => {
+      // 손가락이 요소 밖으로 나가도 up 을 받는다. 일부 환경은 여기서 던지므로 삼킨다.
+      try { el.setPointerCapture?.(e.pointerId) } catch { /* 캡처 실패는 치명적이지 않다 */ }
+      toLike('down')(e)
+    }
+    const onMove = toLike('move')
+    const onUp = toLike('up')
+    // lostpointercapture 는 up 뒤에도 한 번 더 오지만 그때는 이미 목록에 없는 포인터라 무시된다
+    const onCancel = toLike('cancel')
+    // iOS 러버밴드 안전망 — .game-layer 의 touch-action: none 이 못 막는 스크롤을 잡는다
+    const onTouchMove = (e: { preventDefault(): void }) => { e.preventDefault() }
+
+    el.addEventListener('pointerdown', onDown)
+    el.addEventListener('pointermove', onMove)
+    el.addEventListener('pointerup', onUp)
+    el.addEventListener('pointercancel', onCancel)
+    el.addEventListener('lostpointercapture', onCancel)
+    el.addEventListener('touchmove', onTouchMove, { passive: false })
+
+    return () => {
+      el.removeEventListener('pointerdown', onDown)
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerup', onUp)
+      el.removeEventListener('pointercancel', onCancel)
+      el.removeEventListener('lostpointercapture', onCancel)
+      el.removeEventListener('touchmove', onTouchMove)
+      clear()   // 리스너가 떨어진 뒤에는 up 을 영영 못 받는다 — 목록을 비운다
+    }
   }
 
   return { attach, reset, clear, subscribe, handlePointer }
