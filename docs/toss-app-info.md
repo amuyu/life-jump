@@ -37,6 +37,21 @@
 
 > 점프, 점프게임, 픽셀, 픽셀아트, 퀴즈, 캐주얼, 아케이드, 무한점프, 최고기록, 라이프점프
 
+## 식별자 (한 번 정하면 못 바꾸는 것부터)
+
+| 항목 | 값 | 비고 |
+|---|---|---|
+| Android 패키지명 (applicationId) | `dev.lazycompany.lifejump` | **Play 첫 업로드 후 변경 불가.** `lazycompany.dev` 소유 확인 필요 (eye-training 아이콘 URL 기준 추정) |
+| 호스팅 URL | `https://life-jump.lazycompany.dev` | TWA host · 매니페스트 `start_url` · `/.well-known/assetlinks.json` 위치 |
+| granite `appName` | `life-jump` | 앱인토스 URL `life-jump.web.tossmini.com` |
+| 스토어 앱 이름 | 라이프 점프 / Life Jump | 변경 가능 |
+| 서명 키 | keystore alias `lifejump` — Bubblewrap 생성 | **분실 시 업데이트 불가.** 비밀번호와 함께 안전 보관 |
+| 버전 | `1.0.0` / versionCode `1` | versionCode 는 업데이트마다 +1 |
+| 개인정보처리방침 URL | `https://life-jump.lazycompany.dev/privacy` | Play 필수. 수집 항목 없음 |
+| Play 스토어 링크 (게시 후) | `https://play.google.com/store/apps/details?id=dev.lazycompany.lifejump` | 앱인토스 "게임 등급 정보 → 스토어 링크" 에 입력 |
+
+쓰이는 곳: Play 콘솔 / Bubblewrap `twa-manifest.json` (`packageId`, `host`, `signingKey`) / `public/manifest.webmanifest` / `assetlinks.json` / `granite.config.ts` / 앱인토스 콘솔.
+
 ## 카테고리
 
 콘솔의 게임 카테고리 목록: 액션 / RPG / 전략 / 어드벤처 / 퍼즐 / 시뮬레이션 / 레이싱 / 퀴즈 / 카드 / 보드 / 클래식 / 음악 / 스포츠 / 인디.
