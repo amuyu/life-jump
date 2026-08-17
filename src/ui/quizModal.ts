@@ -1,12 +1,38 @@
 import type { Question, RewardKind, Reward } from '../game/quiz'
 import { rewardFor } from '../game/quiz'
 import type { Rng } from '../core/rng'
+import { FOOD_TO_COIN } from '../constants'
 
 const TIME_LIMIT_MS = 10_000
 
 export interface QuizResult {
   correct: boolean
   reward: RewardKind | null
+}
+
+export interface RewardOption {
+  kind: RewardKind
+  /** 버튼 첫 줄 — 무엇을 얼마나 */
+  label: string
+  /** 버튼 둘째 줄 — 어디에 쓰는지. 이 화면이 세 재화를 처음 비교하는 자리라 없으면 고를 근거가 없다 */
+  desc: string
+}
+
+/**
+ * 보상 선택지 세 개. 순수 함수 — 문구를 테스트로 고정한다.
+ * 에너지 설명의 코인 수치는 items.ts 의 grantFood 규칙(FOOD_TO_COIN)에서 오므로
+ * 상수가 바뀌어도 문구가 거짓이 되지 않는다.
+ */
+export function rewardOptions(reward: Reward): RewardOption[] {
+  return [
+    { kind: 'thread', label: `실 ${reward.thread}개`, desc: '옷장에서 옷을 만들 때 써요' },
+    { kind: 'coin', label: `코인 ${reward.coin}개`, desc: '상점에서 업그레이드·소모품을 사요' },
+    {
+      kind: 'food',
+      label: `에너지 +${reward.food}`,
+      desc: `낙하 후 버틸 목숨. 가득 차 있으면 코인 ${FOOD_TO_COIN}개로 바뀌어요`,
+    },
+  ]
 }
 
 export interface ShuffledChoices {
@@ -95,16 +121,16 @@ export function showQuiz(
     h.textContent = '정답! 보상을 고르세요'
     box.appendChild(h)
 
-    const options: Array<[RewardKind, string]> = [
-      ['thread', `실 ${reward.thread}개`],
-      ['coin', `코인 ${reward.coin}개`],
-      ['food', `에너지 +${reward.food}`],
-    ]
-
-    for (const [kind, label] of options) {
+    for (const { kind, label, desc } of rewardOptions(reward)) {
       const b = document.createElement('button')
       b.className = 'btn button-secondary quiz-reward-choice'
-      b.textContent = label
+      const l = document.createElement('span')
+      l.className = 'quiz-reward-label'
+      l.textContent = label
+      const d = document.createElement('span')
+      d.className = 'quiz-reward-desc type-caption'
+      d.textContent = desc
+      b.append(l, d)
       b.onclick = () => {
         cleanup()
         done({ correct: true, reward: kind })

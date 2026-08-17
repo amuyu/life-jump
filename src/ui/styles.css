@@ -261,8 +261,20 @@ canvas { image-rendering: pixelated; }
   font: inherit;
 }
 .quiz-choice:active { transform: scale(0.98); }
-.quiz-reward-choice { width: 100%; }
+/* 보상 버튼은 두 줄(라벨 + 쓰임새 한 줄)이라 .btn 의 한 줄 pill 가정을 풀어준다 —
+   세로 쌓기, 왼쪽 정렬, 줄바꿈 허용, 둥근 사각형. 버튼 전체가 클릭 영역이다. */
+.quiz-reward-choice {
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  white-space: normal;
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+}
 .quiz-reward-choice + .quiz-reward-choice { margin-top: var(--space-xs); }
+.quiz-reward-desc { color: var(--text-muted); font-weight: 400; }
 
 /* ── Loadout — consumable list (reuses .upgrade-card from Shop) ─── */
 .loadout-header { margin-bottom: var(--space-xl); }

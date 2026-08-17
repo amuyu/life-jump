@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { shuffleChoices } from '../../src/ui/quizModal'
+import { shuffleChoices, rewardOptions } from '../../src/ui/quizModal'
+import { FOOD_TO_COIN } from '../../src/constants'
 import { QUESTIONS } from '../../src/game/quiz'
 import { createRng } from '../../src/core/rng'
 
@@ -50,5 +51,32 @@ describe('shuffleChoices', () => {
       expect(count / total).toBeGreaterThan(0.2)
       expect(count / total).toBeLessThan(0.3)
     }
+  })
+})
+
+describe('rewardOptions', () => {
+  const reward = { thread: 12, coin: 12, food: 1 }
+
+  it('실·코인·에너지 순서로 세 개, 라벨에 보상 수치가 들어간다', () => {
+    const opts = rewardOptions(reward)
+    expect(opts.map((o) => o.kind)).toEqual(['thread', 'coin', 'food'])
+    expect(opts[0]!.label).toBe('실 12개')
+    expect(opts[1]!.label).toBe('코인 12개')
+    expect(opts[2]!.label).toBe('에너지 +1')
+  })
+
+  it('부연설명이 각 재화의 실제 쓰임새를 말한다', () => {
+    // 플레이어는 이 화면에서 처음으로 세 재화를 비교한다 — 어디에 쓰는지 모르면 고를 수 없다.
+    const [thread, coin, food] = rewardOptions(reward)
+    expect(thread!.desc).toContain('옷')
+    expect(coin!.desc).toContain('상점')
+    expect(food!.desc).toContain('목숨')
+  })
+
+  it('에너지 설명은 가득일 때 코인으로 바뀌는 규칙과 그 수치를 알려준다', () => {
+    // items.ts 의 grantFood 규칙 — 모르고 고르면 "왜 코인이 늘었지" 가 된다.
+    // 숫자는 상수에서 오므로 값이 바뀌어도 문구가 거짓이 되지 않는다.
+    const food = rewardOptions(reward)[2]!
+    expect(food.desc).toContain(`코인 ${FOOD_TO_COIN}개`)
   })
 })
