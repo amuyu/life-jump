@@ -76,12 +76,53 @@ describe('rollDrop — 우주 보너스', () => {
     expect(saw).toBe(true)
   })
 
-  it('음식과 퀴즈는 우주에서도 1개다', () => {
+  it('퀴즈는 우주에서도 1개다', () => {
     const rng = createRng(11)
     for (let i = 0; i < 5000; i++) {
       const d = rollDrop(C.SPACE_START_Y + 500, rng)
-      if (d.kind === 'food' || d.kind === 'quiz') expect(d.amount).toBe(1)
+      if (d.kind === 'quiz') expect(d.amount).toBe(1)
     }
+  })
+
+  it('우주에서는 음식이 나오지 않는다 — 코인 2~3개로 바뀐다', () => {
+    // 우주에는 생명 유지 장치가 없다. 수입을 깎는 게 아니라 회복을 없애는 변경이라
+    // 음식 몫(2%)은 사라지지 않고 코인으로 넘어간다 — 발판이 더 비어 보이면 안 된다.
+    const rng = createRng(11)
+    let sawCoin = false
+    for (let i = 0; i < 5000; i++) {
+      const d = rollDrop(C.SPACE_START_Y + 500, rng)
+      expect(d.kind).not.toBe('food')
+      if (d.kind === 'coin') {
+        expect(d.amount).toBeGreaterThanOrEqual(2)
+        expect(d.amount).toBeLessThanOrEqual(3)
+        sawCoin = true
+      }
+    }
+    expect(sawCoin).toBe(true)
+  })
+
+  it('우주 경계 바로 아래에서는 음식이 그대로 나온다', () => {
+    // 경계는 SPACE_START_Y 이상부터다 — 하늘 구간의 회복까지 없애면 안 된다.
+    const rng = createRng(7)
+    let sawFood = false
+    for (let i = 0; i < 5000; i++) {
+      const d = rollDrop(C.SPACE_START_Y - 1, rng)
+      if (d.kind === 'food') { expect(d.amount).toBe(1); sawFood = true }
+    }
+    expect(sawFood).toBe(true)
+  })
+
+  it('우주에서 음식이 넘어간 만큼 아이템 없음 비율은 그대로다', () => {
+    // 드랍 밀도가 유지되는지 — 82% 는 변하지 않아야 한다.
+    const rng = createRng(99)
+    const N = 50_000
+    let none = 0
+    for (let i = 0; i < N; i++) {
+      if (rollDrop(C.SPACE_START_Y + 500, rng).kind === null) none += 1
+    }
+    const ratio = none / N
+    expect(ratio).toBeGreaterThan(0.82 * 0.9)
+    expect(ratio).toBeLessThan(0.82 * 1.1)
   })
 
   it('아이템이 없으면 amount는 0이다', () => {

@@ -25,8 +25,19 @@ export function rollDrop(platformY: number, rng: Rng): Drop {
   const kind = dropForRoll(rng.next())
   if (kind === null) return { kind: null, amount: 0 }
 
+  const inSpace = platformY >= C.SPACE_START_Y
+
+  // 우주에는 생명 유지 장치가 없다 — 음식 몫(2%)은 코인으로 넘어간다 (스펙 8절).
+  // 수입을 깎는 변경이 아니라 **회복을 없애는** 변경이다: grantFood가 에너지 가득일 때
+  // 이미 코인으로 바꿔주므로, 성한 플레이어에겐 원래도 코인이었다. 다친 플레이어만
+  // 우주가 편도가 된다. 드랍 밀도를 유지하려고 없애지 않고 코인으로 돌린다.
+  // 회복 수단이 0이 되지는 않는다 — 퀴즈 보상의 에너지는 우주에서도 그대로다.
+  if (kind === 'food' && inSpace) {
+    return { kind: 'coin', amount: rng.int(2, 3) }
+  }
+
   // 우주 구간에서는 실·코인이 여러 개씩 (스펙 8절)
-  if ((kind === 'thread' || kind === 'coin') && platformY >= C.SPACE_START_Y) {
+  if ((kind === 'thread' || kind === 'coin') && inSpace) {
     return { kind, amount: rng.int(2, 3) }
   }
   return { kind, amount: 1 }
