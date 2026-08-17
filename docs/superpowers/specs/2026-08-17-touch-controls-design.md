@@ -229,7 +229,7 @@ const FOLLOW = 24   // CSS px. 중심에서 이만큼 넘게 멀어지면 중심
 
 ### 4.7 스냅샷 발행
 
-- 상태가 바뀔 때마다(`down/move/up/cancel/reset`) `subscribe` 콜백에 `TouchSnapshot` 을 준다.
+- 상태가 바뀔 때마다(`down/move/up/cancel/reset/clear`) `subscribe` 콜백에 `TouchSnapshot` 을 준다.
 - 매 move 마다 발행하지만 press/release 는 dir 변화 시에만 부른다는 점에 주의(4.3).
 
 ## 5. 오버레이 (`ui/touchOverlay.ts`)

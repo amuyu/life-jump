@@ -74,7 +74,10 @@ src/
 - [인앱 광고 소개 (전면/리워드/배너 종류, eCPM, 광고 그룹 설정)](https://developers-apps-in-toss.toss.im/ads/intro.html)
 - [인앱 광고 2.0 ver2 API (loadFullScreenAd/showFullScreenAd, 이벤트 타입, 주의사항)](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EA%B4%91%EA%B3%A0/IntegratedAd.html)
 - [광고 테스트 방법 및 테스트용 광고 ID](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EA%B4%91%EA%B3%A0/IntegratedAd.html#%E1%84%90%E1%85%A6%E1%84%89%E1%85%B3%E1%84%90%E1%85%B3%E1%84%92%E1%85%A1%EA%B8%B0)
-- [프로모션 리워드 지급 API (grantPromotionReward, 토스 포인트 지급)](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EB%B9%84%EA%B2%8C%EC%9E%84/promotion.html)
+- [프로모션 리워드 지급 API — `Promotion.grantReward({ promotionCode, amount })` (토스 포인트 지급, 게임·비게임 공통, 토스 앱 5.232.0+)](https://developers-apps-in-toss.toss.im/documentation/sdk/domains-api/promotion/promotion.grantreward.md)
+  - 호출 전 `Promotion.grantReward.isSupported()` 확인. 함수형 `grantPromotionReward` 도 있으나 미지원 버전에서는 `undefined` 를 돌려준다
+  - ⚠️ 옛 `grantPromotionRewardForGame`(게임 전용)은 **deprecated** — v3 에서 `Promotion.grantReward` 로 통합됐다. eye-training 시절 문서(`/bedrock/reference/framework/비게임/promotion.html`)는 404 이므로 참조하지 않는다
+  - [v3 마이그레이션 가이드](https://developers-apps-in-toss.toss.im/documentation/sdk/v3.md) · [Promotion 도메인](https://developers-apps-in-toss.toss.im/documentation/sdk/domains-api/promotion.md)
 - [스마트 메시지 소개 (세그먼트/발송 시점 최적화, 기능성·광고성 구분, 검수 정책)](https://developers-apps-in-toss.toss.im/smart-message/intro.html)
 - [스마트 메시지 발송 API (send-message/send-bulk-message, x-toss-user-key 인증, mTLS 필수)](https://developers-apps-in-toss.toss.im/smart-message/develop.html)
 
