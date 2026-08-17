@@ -59,12 +59,15 @@ iPhone 사용자는 앱인토스(토스 앱 안 웹뷰)로 도달한다. iOS 네
 
 ## Google Play 출시 (등급 확보용)
 
+콘솔 입력값 전체는 `docs/play-store-listing.md`. 여기는 빌드·서명 메모만.
+
 준비된 것:
 - 웹: `https://life-jump.lazycompany.dev` (Vercel, `main` 푸시 시 자동 배포). `/manifest.webmanifest`, `/privacy`, `/.well-known/assetlinks.json` 라이브.
 - TWA: `twa/` (Bubblewrap). 빌드 → `twa/app-release-bundle.aab` (Play 업로드), `twa/app-release-signed.apk` (사이드로드·원스토어).
   - 재빌드: `cd twa && P=$(cat .keystore-password) && BUBBLEWRAP_KEYSTORE_PASSWORD="$P" BUBBLEWRAP_KEY_PASSWORD="$P" npx @bubblewrap/cli build --skipPwaValidation`
   - 버전 올릴 때: `twa-manifest.json` 의 `appVersion` / `appVersionCode` 수정 → `npx @bubblewrap/cli update --skipVersionUpgrade` → build.
   - **서명 키 `twa/lifejump.keystore` + `twa/.keystore-password` 는 git 에 없다. 백업 필수** — 잃으면 같은 패키지명으로 업데이트 불가.
+  - Play 앱 서명을 켜면 사용자 기기의 APK 는 **Google 의 서명 키**로 서명된다 → `public/.well-known/assetlinks.json` 에 그 지문(콘솔 → 앱 서명)을 **추가**해야 TWA 가 주소창 없이 뜬다. 업로드 키 지문은 이미 있음.
   - Bubblewrap 환경: `~/.bubblewrap/config.json` (JDK = `/Library/Java/JavaVirtualMachines/jdk-17.jdk`, SDK = `~/.bubblewrap/android_sdk_shim` — 기존 Android SDK 로 심링크한 shim).
 - 스토어 에셋: 아이콘 512 `assets/icon/icon-ascent-512.png`, 그래픽 이미지 1024×500 `assets/store/play-feature-1024x500.png`, 스크린샷 `assets/store/shot-*.png`.
 
