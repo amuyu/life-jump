@@ -11,3 +11,5 @@ twa/app-release-*.apk
 twa/build/
 twa/.gradle/
 twa/app/build/
+twa/.keystore-password
+twa/app-release-*
