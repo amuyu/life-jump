@@ -71,6 +71,15 @@ src/
 
 - 개발 막힐 때 질문: https://techchat-apps-in-toss.toss.im/
 - [앱인토스 Bedrock 개발 가이드 (소개)](https://developers-apps-in-toss.toss.im/bedrock/intro.html)
+- **게임 미니앱 전용** — 눈하루(비게임)와 다른 부분은 여기서 나온다:
+  - [게임 출시 체크리스트 (심사 기준 원문)](https://developers-apps-in-toss.toss.im/checklist/app-game.md) — 등급 표시, 게임 내비바(더보기+닫기), 전체화면, OS 뒤로가기 제스처 비활성, **종료 확인 모달**, 10초 내 로드, 사운드 규칙, 광고 위치 제한
+  - [비게임 체크리스트 (비교용)](https://developers-apps-in-toss.toss.im/checklist/app-nongame.md)
+  - [게임 등급분류 안내 (블로그)](https://toss.im/apps-in-toss/blog/game_rating_classification) — 스토어 자체등급 vs GRAC. `docs/toss-app-info.md` 참조
+  - [유저 키 — 게임은 `getUserKeyForGame()`](https://developers-apps-in-toss.toss.im/documentation/common/authentication/hash-key.md) (비게임 `getAnonymousKey()`)
+  - [Game 도메인 API](https://developers-apps-in-toss.toss.im/documentation/sdk/domains-api/game.md)
+  - [내비바 설정 (게임 타입)](https://developers-apps-in-toss.toss.im/documentation/common/navigationbar.md) · [SDK 3.x 마이그레이션 (`webViewProps` 변경)](https://developers-apps-in-toss.toss.im/documentation/integration/sdk-3.x.md)
+- [배포 절차 (테스트 → 심사 최대 3영업일 → 게시 → 롤백)](https://developers-apps-in-toss.toss.im/guide/operation/deploy.md) · [ait CLI 빌드/배포](https://developers-apps-in-toss.toss.im/guide/operation/toss.md) — 눈하루와 동일. 번들 압축 해제 100MB, SSR 금지, wss만
+- [전체 문서 색인 (llms.txt)](https://developers-apps-in-toss.toss.im/llms.txt)
 - [인앱 광고 소개 (전면/리워드/배너 종류, eCPM, 광고 그룹 설정)](https://developers-apps-in-toss.toss.im/ads/intro.html)
 - [인앱 광고 2.0 ver2 API (loadFullScreenAd/showFullScreenAd, 이벤트 타입, 주의사항)](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EA%B4%91%EA%B3%A0/IntegratedAd.html)
 - [광고 테스트 방법 및 테스트용 광고 ID](https://developers-apps-in-toss.toss.im/bedrock/reference/framework/%EA%B4%91%EA%B3%A0/IntegratedAd.html#%E1%84%90%E1%85%A6%E1%84%89%E1%85%B3%E1%84%90%E1%85%B3%E1%84%92%E1%85%A1%EA%B8%B0)
@@ -271,6 +280,10 @@ SUPABASE_SERVICE_ROLE_KEY               # 자동 주입
 | **환경변수** | 없음 | `.env.local`에 `VITE_TOSS_*_AD_GROUP_ID` 추가. `.gitignore` 확인 |
 | **에셋 호스팅** | 없음 | `brand.icon`은 외부 URL이어야 함 — 로고를 어딘가에 호스팅 |
 | **오디오** | 없음 | 넣는다면 mp3 파일 방식만 사용 (`speechSynthesis` 금지) |
+| **종료 확인 모달** | 없음 | 게임 체크리스트 필수 항목 — 닫기(X)/뒤로가기 시 "나갈까요?" 확인. 판 중이면 일시정지 후 표시 |
+| **게임 내비바** | 없음 | `webViewProps: { type: 'game' }` (2.x) — 더보기+닫기만. 3.x 는 마이그레이션 문서 따라 |
+| **유저 키** | 없음 | 랭킹 등 서버 기능 붙일 때 `getUserKeyForGame()` — 비게임의 `getAnonymousKey()` 와 다르다 |
+| **등급 표시** | 없음 | 체크리스트: 등급 결과가 브릿지 뷰에 표시돼야 함 — 콘솔 등급 정보 입력으로 처리되는지 확인 |
 
 ## 수익 구조 참고 (eye-training 실측)
 
