@@ -89,6 +89,28 @@ const variants = {
     ground: true,
     tee: PALETTE.c,
   },
+  // 게임의 구간 진행 그대로 — 아래는 하늘, 위로 갈수록 우주. 별은 위쪽(우주)에만 둔다.
+  // 그라데이션이 부드럽게만 이어지면 "하늘에서 우주로" 가 아니라 "탁한 파랑" 으로 읽히므로
+  // 중간(캐릭터 머리 위)에서 급하게 어두워지도록 stop 을 몰아 둔다.
+  ascent: {
+    bg: `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0"    stop-color="#0b1026"/>
+      <stop offset="0.16" stop-color="#1b2a4a"/>
+      <stop offset="0.36" stop-color="#5aa9e6"/>
+      <stop offset="0.70" stop-color="#8fd3f8"/>
+      <stop offset="1"    stop-color="#cfe6f7"/>
+    </linearGradient></defs>
+    <rect width="${SIZE}" height="${SIZE}" fill="url(#g)"/>
+    <circle cx="${SIZE * 0.16}" cy="${SIZE * 0.12}" r="${SIZE * 0.009}" fill="#ffffff" opacity="0.95"/>
+    <circle cx="${SIZE * 0.34}" cy="${SIZE * 0.07}" r="${SIZE * 0.006}" fill="#ffffff" opacity="0.7"/>
+    <circle cx="${SIZE * 0.62}" cy="${SIZE * 0.10}" r="${SIZE * 0.007}" fill="#ffffff" opacity="0.8"/>
+    <circle cx="${SIZE * 0.82}" cy="${SIZE * 0.05}" r="${SIZE * 0.010}" fill="#ffffff" opacity="0.9"/>
+    <circle cx="${SIZE * 0.90}" cy="${SIZE * 0.22}" r="${SIZE * 0.006}" fill="#ffffff" opacity="0.7"/>
+    <circle cx="${SIZE * 0.08}" cy="${SIZE * 0.30}" r="${SIZE * 0.007}" fill="#ffffff" opacity="0.6"/>
+    <circle cx="${SIZE * 0.72}" cy="${SIZE * 0.27}" r="${SIZE * 0.005}" fill="#ffffff" opacity="0.5"/>`,
+    ground: true,
+    tee: PALETTE.c,
+  },
   // 게임 화면 하늘색 단색 + 발판 한 줄 — 가장 담백함
   flat: {
     bg: `<rect width="${SIZE}" height="${SIZE}" fill="#8fd3f8"/>`,

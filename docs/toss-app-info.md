@@ -39,7 +39,8 @@
 
 ## 아이콘
 
-- 파일: `assets/icon/icon-sky-1024.png` (512·192 도 같은 폴더). 원본은 `icon-sky.svg`.
+- 파일: `assets/icon/icon-ascent-1024.png` (512·192 도 같은 폴더). 원본은 `icon-ascent.svg`.
+  배경은 게임 구간 진행 그대로 — 아래 하늘, 위로 갈수록 우주(별). 다른 배경(sky/night/flat)도 같은 폴더에 남겨 둠.
 - 생성: `node scripts/make-icon.mjs` — 캐릭터 스프라이트(`src/data/pixelmaps.ts` PLAYER_IDLE)에서 그린다.
   스프라이트나 기본 옷 색이 바뀌면 다시 돌린다.
 - `granite.config.ts` 의 `brand.icon` 은 **외부 URL** 이어야 한다 — 콘솔이 URL 을 요구하면 호스팅한 주소를 넣는다.
