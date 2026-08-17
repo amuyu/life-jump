@@ -11,7 +11,9 @@ const tossSdkInstalled = existsSync(
 )
 
 export default defineConfig({
-  base: './',
+  // 절대 경로 — PWA 매니페스트·아이콘·assetlinks 가 도메인 루트 기준이어야 TWA/설치형 앱이 동작한다.
+  // 하위 경로 호스팅이 필요해지면 그때 base 를 바꾼다.
+  base: '/',
   resolve: {
     alias: tossSdkInstalled
       ? []

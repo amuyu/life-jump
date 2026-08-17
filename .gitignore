@@ -3,3 +3,11 @@ dist/
 .DS_Store
 .superpowers/
 .serena/
+
+# TWA (Bubblewrap) — 서명 키와 로컬 빌드 산출물은 커밋하지 않는다
+twa/*.keystore
+twa/app-release-*.aab
+twa/app-release-*.apk
+twa/build/
+twa/.gradle/
+twa/app/build/
