@@ -244,3 +244,58 @@ ${charRects.join('\n')}
   storeMade.push(svgPath, png)
 }
 console.log(storeMade.map((p) => p.replace(root + '/', '')).join('\n'))
+
+// ── Google Play 그래픽 이미지 1024×500 — 썸네일과 같은 구성, 비율만 다르다 ─────
+{
+  const W = 1024, H = 500
+  const bpx = Math.floor((H * 0.62) / 16)
+  const bcx = Math.floor(W * 0.24)
+  const bx = bcx - bpx * 6
+  const by = Math.floor((H - bpx * 16) / 2) + Math.floor(bpx * 0.5)
+  const charRects = []
+  for (let y = 0; y < 16; y++) {
+    const row = PLAYER_IDLE[y]
+    let x = 0
+    while (x < 12) {
+      const ch = row[x]
+      if (ch === '.') { x++; continue }
+      let x2 = x
+      while (x2 + 1 < 12 && row[x2 + 1] === ch) x2++
+      charRects.push(`<rect x="${bx + x * bpx}" y="${by + y * bpx}" width="${(x2 - x + 1) * bpx}" height="${bpx}" fill="${PALETTE[ch]}"/>`)
+      x = x2 + 1
+    }
+  }
+  const gw = bpx * 16, gx = bcx - gw / 2, gy = by + bpx * 16
+  const textX = Math.floor(W * 0.46)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0"    stop-color="#0b1026"/>
+  <stop offset="0.16" stop-color="#1b2a4a"/>
+  <stop offset="0.36" stop-color="#5aa9e6"/>
+  <stop offset="0.70" stop-color="#8fd3f8"/>
+  <stop offset="1"    stop-color="#cfe6f7"/>
+</linearGradient></defs>
+<rect width="${W}" height="${H}" fill="url(#g)"/>
+<g fill="#ffffff">
+  <circle cx="${W * 0.06}" cy="${H * 0.14}" r="4" opacity="0.9"/>
+  <circle cx="${W * 0.15}" cy="${H * 0.07}" r="3" opacity="0.7"/>
+  <circle cx="${W * 0.33}" cy="${H * 0.10}" r="3.5" opacity="0.8"/>
+  <circle cx="${W * 0.55}" cy="${H * 0.06}" r="4.5" opacity="0.9"/>
+  <circle cx="${W * 0.72}" cy="${H * 0.13}" r="3" opacity="0.7"/>
+  <circle cx="${W * 0.88}" cy="${H * 0.08}" r="4" opacity="0.85"/>
+</g>
+<g shape-rendering="crispEdges">
+<rect x="${gx}" y="${gy}" width="${gw}" height="${bpx * 1.5}" fill="#4caf50"/>
+<rect x="${gx}" y="${gy + bpx * 1.5}" width="${gw}" height="${bpx * 2}" fill="#8b5a2b"/>
+${charRects.join('\n')}
+</g>
+<text x="${textX}" y="${H * 0.47}" font-family="Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif" font-size="82" font-weight="800" fill="#ffffff">라이프 점프</text>
+<text x="${textX}" y="${H * 0.63}" font-family="Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif" font-size="36" font-weight="600" fill="#0b1e33" opacity="0.85">끝없이 올라가는 픽셀 점프 게임</text>
+</svg>
+`
+  const svgPath = join(storeDir, 'play-feature.svg')
+  writeFileSync(svgPath, svg)
+  const png = join(storeDir, 'play-feature-1024x500.png')
+  execFileSync('rsvg-convert', ['-w', String(W), '-h', String(H), '-o', png, svgPath])
+  console.log(png.replace(root + '/', ''))
+}

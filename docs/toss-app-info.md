@@ -57,6 +57,25 @@
 가이드라인 4.2(Minimum Functionality) 때문에 순수 웹뷰 래퍼는 리젝 위험이 크며 $99/년. 등급은 Play 하나로 충분하고
 iPhone 사용자는 앱인토스(토스 앱 안 웹뷰)로 도달한다. iOS 네이티브 출시가 목표가 되면 그때 별도 계획.
 
+## Google Play 출시 (등급 확보용)
+
+준비된 것:
+- 웹: `https://life-jump.lazycompany.dev` (Vercel, `main` 푸시 시 자동 배포). `/manifest.webmanifest`, `/privacy`, `/.well-known/assetlinks.json` 라이브.
+- TWA: `twa/` (Bubblewrap). 빌드 → `twa/app-release-bundle.aab` (Play 업로드), `twa/app-release-signed.apk` (사이드로드·원스토어).
+  - 재빌드: `cd twa && P=$(cat .keystore-password) && BUBBLEWRAP_KEYSTORE_PASSWORD="$P" BUBBLEWRAP_KEY_PASSWORD="$P" npx @bubblewrap/cli build --skipPwaValidation`
+  - 버전 올릴 때: `twa-manifest.json` 의 `appVersion` / `appVersionCode` 수정 → `npx @bubblewrap/cli update --skipVersionUpgrade` → build.
+  - **서명 키 `twa/lifejump.keystore` + `twa/.keystore-password` 는 git 에 없다. 백업 필수** — 잃으면 같은 패키지명으로 업데이트 불가.
+  - Bubblewrap 환경: `~/.bubblewrap/config.json` (JDK = `/Library/Java/JavaVirtualMachines/jdk-17.jdk`, SDK = `~/.bubblewrap/android_sdk_shim` — 기존 Android SDK 로 심링크한 shim).
+- 스토어 에셋: 아이콘 512 `assets/icon/icon-ascent-512.png`, 그래픽 이미지 1024×500 `assets/store/play-feature-1024x500.png`, 스크린샷 `assets/store/shot-*.png`.
+
+Play 콘솔 순서:
+1. 개발자 계정 ($25 1회) — 있으면 그 계정.
+2. 앱 만들기: 라이프 점프 / 게임 / 무료 / 한국어.
+3. 스토어 등록정보: 짧은 설명(80자) = 부제, 자세한 설명 = 상세 설명(위), 아이콘·그래픽·스크린샷 업로드.
+4. 앱 콘텐츠: 개인정보처리방침 URL `https://life-jump.lazycompany.dev/privacy`, 광고 없음, 데이터 안전 "수집 없음", 타겟층 전체, **콘텐츠 등급 설문(IARC)** → 전체이용가.
+5. 비공개 테스트 트랙에 AAB 업로드 → 개인 신규 계정이면 테스터 12명 × 14일 요건 충족 후 프로덕션 신청.
+6. 게시되면 스토어 링크를 앱인토스 "게임 등급 정보" 에, GRAC 검색 결과를 "자체등급분류 게임물 정보" 에.
+
 ## 카테고리
 
 콘솔의 게임 카테고리 목록: 액션 / RPG / 전략 / 어드벤처 / 퍼즐 / 시뮬레이션 / 레이싱 / 퀴즈 / 카드 / 보드 / 클래식 / 음악 / 스포츠 / 인디.
