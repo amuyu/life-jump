@@ -39,7 +39,36 @@ Play 콘솔에 넣는 값. 콘솔과 이 파일을 같게 유지한다. 앱인�
 > ▶ 가볍게, 바로
 > 로그인이나 회원가입 없이 바로 시작합니다. 개인정보를 수집하지 않으며 진행 상황은 기기에만 저장됩니다. 한 판 1~2분, 최고 기록에 도전하세요.
 
-영어 리스팅은 i18n 작업(`2026-08-17-i18n-design.md`) 이후 추가.
+## 스토어 등록정보 (영어, en-US) — i18n 완료 후 콘솔에 추가
+
+게임 UI 가 영어를 지원하기 전에는 넣지 않는다 (영어 설명 보고 받은 사람이 한국어 UI 를 만나면 안 된다).
+용어는 `docs/superpowers/specs/2026-08-17-i18n-design.md` 6절과 같다: thread / coins / energy / Wardrobe / Shop / Records / run / Go! / Try again.
+
+| 항목 | 제한 | 값 |
+|---|---|---|
+| App name | 30 | Life Jump |
+| Short description | 80 | Endless pixel-art jumper — answer quizzes, earn thread and coins, dress up (74) |
+| Full description | 4000 | 아래 (1028) |
+
+> Life Jump is a pixel-art jumping game: hop from platform to platform and climb as high as you can.
+>
+> ▶ How to play
+> Slide the left half of the screen to move left and right; hold the right half to jump — hold longer to jump higher. From the ground to the sky to outer space, platforms get narrower and farther apart. Fall and you lose one energy (heart) and restart on a nearby platform; lose them all and the run ends.
+>
+> ▶ Quizzes for rewards
+> Step on a [?] item and a trivia question pops up. Answer correctly and pick your reward: thread, coins, or energy.
+>
+> ▶ Dress up and power up
+> - Wardrobe: craft 10 outfits with the thread you collect and wear them.
+> - Shop: spend coins on jump, energy, air-control and magnet upgrades, plus consumables (rocket, feather, cushion, double jump).
+> - Records: your best height, a chart of recent runs, and how far you reached in each zone.
+>
+> ▶ Light and instant
+> No sign-up, no login. We collect no personal data — progress is saved on your device only. A run takes a minute or two. Beat your best.
+
+Release notes (v1.0.0): "First release. Endless pixel-art jumper — answer quizzes to earn thread and coins, craft outfits and upgrade."
+영어 리스팅을 넣는 시점에 국가/지역도 전체로 확장하고, 앱인토스 쪽 영어 스토어 문구(`toss-app-info.md`)는 별도.
+
 
 ## 그래픽
 
