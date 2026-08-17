@@ -56,8 +56,10 @@ src/ui/touchOverlay.ts (신규) 슬라이더 트랙 + ● 글리프 + 조이스�
                          touch.ts 가 발행하는 스냅샷을 받아 그리기만 한다. save 를 모른다 —
                          안내 완료는 onHintDone 콜백으로 알린다. { dismissHint, unmount } 를 돌려준다.
 
-src/toss/screen.ts (신규) setIosSwipeGestureEnabled 래퍼. 동적 import + isSupported 가드,
-                         호출 직렬화, 실패는 삼킨다. 브라우저에서는 no-op.
+src/toss/sdk.ts    (신규) SDK 를 import 하는 유일한 지점 — 정적 리터럴 dynamic import (7.2).
+src/toss/sdk-stub.ts / sdk-ambient.d.ts  미설치 환경용 빈 스텁(vite alias) 과 tsc 용 ambient 선언.
+src/toss/screen.ts (신규) setIosSwipeGestureEnabled 래퍼. isSupported 가드, 호출 직렬화,
+                         적용값 기준 중복 스킵, 실패는 삼킨다. 브라우저에서는 no-op.
 
 src/main.ts              startRun: detachTouch = touch.attach(gameLayer), overlay 마운트, 스와이프백 off.
                          판 종료·로비 복귀: detachTouch(), overlay 제거, 스와이프백 on.
@@ -333,11 +335,21 @@ body { touch-action: manipulation; }   /* 더블탭 줌 제거. 스크롤·핀�
 - `startRun` → `setSwipeBack(false)`, 판 종료·로비 복귀 → `setSwipeBack(true)`.
   왼쪽 엄지가 화면 왼쪽 가장자리에서 시작하는 것을 뒤로가기로 먹지 않게 한다.
 - 래퍼 규약:
-  - 동적 import + `isSupported` 가드, 예외는 삼킨다. 브라우저에서는 no-op.
+  - SDK import 는 `src/toss/sdk.ts` 한 곳에서 **정적 리터럴 문자열의 동적 import**로 한다
+    (`import('@apps-in-toss/web-framework')`). 문자열을 변수에 두고 `@vite-ignore` 를 붙이면 번들에
+    bare specifier 가 그대로 남아 브라우저/WebView 가 런타임에 해석하지 못하므로, 패키지를 설치해도
+    영원히 no-op 이 된다. 리터럴이어야 Vite 가 빌드 시 번들링해 설치 후 실제로 살아난다.
+  - 미설치 환경(일반 웹 빌드·테스트)에서는 `vite.config.ts` 가 `node_modules` 에 패키지가 없을 때만
+    그 specifier 를 빈 스텁(`src/toss/sdk-stub.ts`)으로 alias 한다. 설치하면 alias 가 자동으로 꺼진다 —
+    코드 수정 없음. tsc 는 `src/toss/sdk-ambient.d.ts` 의 `declare module` 로 통과시키며, 실제 패키지
+    타입이 설치되면 그쪽이 우선한다.
+  - `isSupported` 가드, 예외는 삼킨다. 브라우저에서는 no-op.
   - **호출 직렬화** — 내부 promise 체인에 이어 붙여 앞 호출이 끝난 뒤 다음을 보낸다. 네이티브에
     도달하는 순서를 보장해야 하므로 generation token(JS 쪽 상태만 맞춤)이 아니라 직렬화다.
-  - 마지막으로 *요청한* 값과 같으면 스킵(중복 호출 억제). 짧은 판이 연달아 끝나도 로비에서 스와이프백이
-    꺼진 채 남지 않는다.
+  - 중복 스킵은 **마지막으로 적용된 값(또는 지금 큐에서 적용 중인 값)** 기준이다. 요청 시점에 기록하면
+    판 시작의 `set(false)` 가 일시 실패했을 때 그 판 내내 재시도가 막혀 스와이프백이 켜진 채 남는다.
+    실패·미지원으로 보내지 못한 값은 기록하지 않아 다음 호출이 다시 시도한다. 연달아 같은 값을 부르면
+    큐의 pending 값과 비교해 하나만 보낸다.
 - SDK 시그니처(문서 기준): `setIosSwipeGestureEnabled(options: { isEnabled: boolean }): Promise<void>`.
   export 경로는 7.4 선행 확인 항목.
 

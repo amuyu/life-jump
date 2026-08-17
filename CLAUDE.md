@@ -129,7 +129,7 @@ export default defineConfig({
 ## SDK 사용 패턴
 
 앱인토스 SDK는 **토스 앱 WebView 안에서만** 브리지가 존재한다. 일반 브라우저에서는 없다.
-따라서 **정적 import 금지 — 항상 동적 import + `isSupported()` 가드**로 감싼다.
+따라서 **top-level 정적 import 금지 — 항상 동적 import + `isSupported()` 가드**로 감싼다.
 
 ```ts
 // 토스 앱 안인지 판별
@@ -141,6 +141,16 @@ import('@apps-in-toss/web-framework').then(({ loadFullScreenAd }) => {
   }
 })
 ```
+
+이 프로젝트에서 SDK를 import 하는 곳은 **`src/toss/sdk.ts` 하나뿐**이다 (`loadTossSdk()`). 새 SDK 기능은
+그 로더를 통해 export 를 꺼내 쓰고, 다른 파일에서 `@apps-in-toss/web-framework` 를 직접 import 하지 않는다.
+
+- import 문자열은 **정적 리터럴**로 둔다. `import(/* @vite-ignore */ 변수)` 로 쓰면 번들에 bare specifier가
+  그대로 남아 브라우저/WebView가 런타임에 해석하지 못한다 — 패키지를 설치해도 영원히 실패한다.
+- 미설치 환경에서는 `vite.config.ts`가 `node_modules`에 패키지가 없을 때만 그 specifier를 `src/toss/sdk-stub.ts`
+  로 alias 한다. 설치하면 자동으로 꺼진다. tsc는 `src/toss/sdk-ambient.d.ts`의 `declare module`로 통과한다.
+- 확인 방법: `npm run build` 후 `dist/assets/`에 `sdk-stub-*.js`(미설치) 또는 `web-framework-*.js`(설치)
+  청크가 있어야 하고, `grep "apps-in-toss" dist/assets/*.js` 는 0건이어야 한다.
 
 이 프로젝트는 React가 아니므로 eye-training의 훅(`useRewardedAd` 등)을 그대로 못 쓴다.
 대신 **상태를 가진 싱글턴 모듈**로 옮긴다 (eye-training의 `src/lib/fullScreenAdManager.ts`가 이미 그 형태 — 훅은 얇은 어댑터일 뿐이다).
