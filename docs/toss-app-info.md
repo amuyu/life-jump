@@ -41,7 +41,7 @@
 
 | 항목 | 값 | 비고 |
 |---|---|---|
-| Android 패키지명 (applicationId) | `dev.lazycompany.lifejump` | **Play 첫 업로드 후 변경 불가.** `lazycompany.dev` 소유 확인 필요 (eye-training 아이콘 URL 기준 추정) |
+| Android 패키지명 (applicationId) | `dev.lazycompany.lifejump` | **Play 첫 업로드 후 변경 불가.** `lazycompany.dev` 는 본인 소유 확인됨 (2026-08-17) |
 | 호스팅 URL | `https://life-jump.lazycompany.dev` | TWA host · 매니페스트 `start_url` · `/.well-known/assetlinks.json` 위치 |
 | granite `appName` | `life-jump` | 앱인토스 URL `life-jump.web.tossmini.com` |
 | 스토어 앱 이름 | 라이프 점프 / Life Jump | 변경 가능 |
@@ -51,6 +51,11 @@
 | Play 스토어 링크 (게시 후) | `https://play.google.com/store/apps/details?id=dev.lazycompany.lifejump` | 앱인토스 "게임 등급 정보 → 스토어 링크" 에 입력 |
 
 쓰이는 곳: Play 콘솔 / Bubblewrap `twa-manifest.json` (`packageId`, `host`, `signingKey`) / `public/manifest.webmanifest` / `assetlinks.json` / `granite.config.ts` / 앱인토스 콘솔.
+
+
+**애플 앱스토어는 내지 않는다** (지금 목적에선). TWA 는 Android 전용이라 iOS 는 WKWebView 래퍼(Capacitor)를 따로 만들어야 하고,
+가이드라인 4.2(Minimum Functionality) 때문에 순수 웹뷰 래퍼는 리젝 위험이 크며 $99/년. 등급은 Play 하나로 충분하고
+iPhone 사용자는 앱인토스(토스 앱 안 웹뷰)로 도달한다. iOS 네이티브 출시가 목표가 되면 그때 별도 계획.
 
 ## 카테고리
 
