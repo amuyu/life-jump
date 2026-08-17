@@ -171,3 +171,76 @@ ${rects(v.tee)}
   }
 }
 console.log(made.map((p) => p.replace(root + '/', '')).join('\n'))
+
+// ── 스토어 에셋 (앱인토스 콘솔 규격) ─────────────────────────────────────────────
+// 로고 600×600 (라이트 = ascent, 다크모드 = night), 썸네일 1932×828 (배너).
+// 텍스트는 macOS 의 Apple SD Gothic Neo 로 렌더된다 — 다른 OS 면 font-family 를 바꾼다.
+const storeDir = join(root, 'assets', 'store')
+mkdirSync(storeDir, { recursive: true })
+
+const storeMade = []
+const logo = (variant, name) => {
+  const svgPath = join(outDir, `icon-${variant}.svg`)
+  const png = join(storeDir, `${name}-600.png`)
+  execFileSync('rsvg-convert', ['-w', '600', '-h', '600', '-o', png, svgPath])
+  storeMade.push(png)
+}
+logo('ascent', 'logo')
+logo('night', 'logo-dark')
+
+// 썸네일 — 가로 배너. 왼쪽 1/3 에 캐릭터, 오른쪽에 이름/부제.
+{
+  const W = 1932, H = 828
+  const bpx = Math.floor((H * 0.62) / 16)      // 캐릭터 픽셀 크기 (세로 62%)
+  const bcx = Math.floor(W * 0.24)             // 캐릭터 중심 x
+  const bx = bcx - bpx * 6
+  const by = Math.floor((H - bpx * 16) / 2) + Math.floor(bpx * 0.5)
+  const charRects = []
+  for (let y = 0; y < 16; y++) {
+    const row = PLAYER_IDLE[y]
+    let x = 0
+    while (x < 12) {
+      const ch = row[x]
+      if (ch === '.') { x++; continue }
+      let x2 = x
+      while (x2 + 1 < 12 && row[x2 + 1] === ch) x2++
+      charRects.push(`<rect x="${bx + x * bpx}" y="${by + y * bpx}" width="${(x2 - x + 1) * bpx}" height="${bpx}" fill="${PALETTE[ch]}"/>`)
+      x = x2 + 1
+    }
+  }
+  const gw = bpx * 16, gx = bcx - gw / 2, gy = by + bpx * 16
+  const textX = Math.floor(W * 0.46)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+  <stop offset="0"    stop-color="#0b1026"/>
+  <stop offset="0.16" stop-color="#1b2a4a"/>
+  <stop offset="0.36" stop-color="#5aa9e6"/>
+  <stop offset="0.70" stop-color="#8fd3f8"/>
+  <stop offset="1"    stop-color="#cfe6f7"/>
+</linearGradient></defs>
+<rect width="${W}" height="${H}" fill="url(#g)"/>
+<g fill="#ffffff">
+  <circle cx="${W * 0.06}" cy="${H * 0.14}" r="7" opacity="0.9"/>
+  <circle cx="${W * 0.15}" cy="${H * 0.07}" r="5" opacity="0.7"/>
+  <circle cx="${W * 0.33}" cy="${H * 0.10}" r="6" opacity="0.8"/>
+  <circle cx="${W * 0.55}" cy="${H * 0.06}" r="8" opacity="0.9"/>
+  <circle cx="${W * 0.72}" cy="${H * 0.13}" r="5" opacity="0.7"/>
+  <circle cx="${W * 0.88}" cy="${H * 0.08}" r="7" opacity="0.85"/>
+  <circle cx="${W * 0.95}" cy="${H * 0.20}" r="5" opacity="0.6"/>
+</g>
+<g shape-rendering="crispEdges">
+<rect x="${gx}" y="${gy}" width="${gw}" height="${bpx * 1.5}" fill="#4caf50"/>
+<rect x="${gx}" y="${gy + bpx * 1.5}" width="${gw}" height="${bpx * 2}" fill="#8b5a2b"/>
+${charRects.join('\n')}
+</g>
+<text x="${textX}" y="${H * 0.47}" font-family="Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif" font-size="150" font-weight="800" fill="#ffffff">라이프 점프</text>
+<text x="${textX}" y="${H * 0.63}" font-family="Apple SD Gothic Neo, Noto Sans CJK KR, sans-serif" font-size="66" font-weight="600" fill="#0b1e33" opacity="0.85">끝없이 올라가는 픽셀 점프 게임</text>
+</svg>
+`
+  const svgPath = join(storeDir, 'thumbnail.svg')
+  writeFileSync(svgPath, svg)
+  const png = join(storeDir, 'thumbnail-1932x828.png')
+  execFileSync('rsvg-convert', ['-w', String(W), '-h', String(H), '-o', png, svgPath])
+  storeMade.push(svgPath, png)
+}
+console.log(storeMade.map((p) => p.replace(root + '/', '')).join('\n'))
