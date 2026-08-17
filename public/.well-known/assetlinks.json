@@ -2,7 +2,7 @@
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "dev.lazycompany.lifejump",
+    "package_name": "dev.lazycompany.llifejump",
     "sha256_cert_fingerprints": ["88:01:EA:1F:6F:E5:CD:B0:4E:70:D2:3B:1C:5B:F8:57:EF:41:3E:FA:E3:08:5F:BA:A9:1F:08:4B:20:5A:29:B6"]
   }
 }]

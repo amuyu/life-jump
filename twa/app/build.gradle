@@ -21,7 +21,7 @@ plugins {
 }
 
 def twaManifest = [
-    applicationId: 'dev.lazycompany.lifejump',
+    applicationId: 'dev.lazycompany.llifejump',
     hostName: 'life-jump.lazycompany.dev', // The domain being opened in the TWA.
     launchUrl: '/', // The start path for the TWA. Must be relative to the domain.
     name: '라이프 점프', // The application name.
@@ -52,9 +52,9 @@ def twaManifest = [
 
 android {
     compileSdkVersion 36
-    namespace "dev.lazycompany.lifejump"
+    namespace "dev.lazycompany.llifejump"
     defaultConfig {
-        applicationId "dev.lazycompany.lifejump"
+        applicationId "dev.lazycompany.llifejump"
         minSdkVersion 21
         targetSdkVersion 36
         versionCode 1

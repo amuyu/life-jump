@@ -12,7 +12,7 @@ Play 콘솔에 넣는 값. 콘솔과 이 파일을 같게 유지한다. 앱인�
 | 앱 / 게임 | 게임 |
 | 무료 / 유료 | 무료 |
 | 폼 팩터 | **휴대전화만.** 태블릿(별도 스크린샷·큰 화면 심사, 세로 고정 캔버스라 여백 큼)·Chrome OS(창 리사이즈·키/마우스 심사)·Play Games on PC(별개 프로그램, 별도 SDK·심사)·Wear/TV/Auto 는 옵트인하지 않는다. 등급 확보용 최소 배포에 심사 표면만 늘어난다 |
-| 패키지 이름 (첫 AAB 업로드 시 고정) | `dev.lazycompany.lifejump` |
+| 패키지 이름 (첫 AAB 업로드 시 고정) | `dev.lazycompany.llifejump` |
 
 ## 기본 스토어 등록정보 (한국어)
 
@@ -124,7 +124,7 @@ Release notes (v1.0.0): "First release. Endless pixel-art jumper — answer quiz
 1. **비공개 테스트** 트랙에 AAB 업로드, 테스터 이메일 목록 등록.
 2. 개인 계정(2023-11 이후 생성)이면 **테스터 12명 이상 × 14일 연속** 옵트인 후 프로덕션 신청 가능. 회사 계정·기존 계정이면 면제.
 3. 프로덕션 출시 → 심사 1~7일 → 게시.
-4. 게시 후 스토어 URL: `https://play.google.com/store/apps/details?id=dev.lazycompany.lifejump` → 앱인토스 콘솔 "게임 등급 정보 → 스토어 링크".
+4. 게시 후 스토어 URL: `https://play.google.com/store/apps/details?id=dev.lazycompany.llifejump` → 앱인토스 콘솔 "게임 등급 정보 → 스토어 링크".
 
 ### 출시 노트 (v1.0.0)
 > 첫 출시. 픽셀 아트 무한 점프 게임 — 퀴즈로 재화를 모아 옷을 만들고 업그레이드하세요.

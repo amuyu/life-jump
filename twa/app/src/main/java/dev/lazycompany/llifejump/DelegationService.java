@@ -1,4 +1,4 @@
-package dev.lazycompany.lifejump;
+package dev.lazycompany.llifejump;
 
 
 

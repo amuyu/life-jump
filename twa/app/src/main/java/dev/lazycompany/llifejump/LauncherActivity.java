@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package dev.lazycompany.lifejump;
+package dev.lazycompany.llifejump;
 
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
